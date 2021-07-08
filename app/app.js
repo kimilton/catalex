@@ -1,21 +1,31 @@
 const express = require('express')
+
+const { writeToFile, loadFromFile } = require('./filesystem')
+const { initializePrimeCache, convertPrimeCacheToRaw } = require('./persistence')
 const routes = require('./routes')
 
-const { loadFile } = require('./persistence')
-const { scanDirectory } = require('./filesystem')
+const CONSTANTS = require('./const')
 
 const app = express()
 const port = 8080
 
-module.exports = () => {
+module.exports = async () => {
 
     console.log('Application started.')
 
-    const data = loadFile()
+    const [ loaded, fileLoadError ] = await loadFromFile()
+    if (fileLoadError) {
+        console.error(fileLoadError)
+        return
+    }
+    const primeCache = await initializePrimeCache(loaded)
+    const rawCache = convertPrimeCacheToRaw(primeCache)
 
-    const scannedFiles = scanDirectory()
+    const worky = rawCache["WORKS"]
 
-    
+    Object.keys(worky).map(key => {
+        if (Math.random() > 0.99) console.log(worky[key])
+    })
 
     // app.use(routes)
 

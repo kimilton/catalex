@@ -1,15 +1,15 @@
-const SHARED = require('../shared')
+const CONSTANTS = require('../../const')
 
 const DEFUALT_MODEL = {
     name: "",
     otherNames: [],
-    retired: SHARED.UNKNOWN,
+    retired: CONSTANTS.UNKNOWN,
     birthYear: 0,
     image: "",
-    rankingTop: SHARED.UNRANKED,
-    rankingBottom: SHARED.UNRANKED,
-    rankingPerformance: SHARED.UNRANKED,
-    rankingSubjective: SHARED.UNRANKED,
+    rankingTop: CONSTANTS.UNRANKED,
+    rankingBottom: CONSTANTS.UNRANKED,
+    rankingPerformance: CONSTANTS.UNRANKED,
+    rankingSubjective: CONSTANTS.UNRANKED,
     tags: [],
 }
 
