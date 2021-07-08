@@ -20,7 +20,6 @@ const loadFromFile = async () => {
 const writeToFile = async (input) => {
     try {
         const strData = JSON.stringify(input)
-        console.log(strData)
         const compressedData = await compress(strData)
         await fs.writeFile(SAVE_FILE_PATH, compressedData, {encoding: BUFFER_ENCODING})
     } catch (err){

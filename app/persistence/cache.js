@@ -36,9 +36,9 @@ class WorksCache extends SubCache {
     importRawList(rawList){
         for (let raw of rawList){
             const { id } = raw
-            if (!this._cache.hasOwnProperty(id)){
+            const safeId = toSafeId(id)
+            if (!this._cache.hasOwnProperty(safeId)){
                 const work = rawToWork(raw)
-                const safeId = toSafeId(id)
                 this._cache[safeId] = work
             }
         }

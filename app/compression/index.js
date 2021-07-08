@@ -9,7 +9,6 @@ const { catalexEncoding: BUFFER_ENCODING } = process.env
 
 const compress = async (inputString) => {
     const buffer = await asyncDeflate(inputString)
-    // return buffer
     return buffer.toString(BUFFER_ENCODING)
 }
 
