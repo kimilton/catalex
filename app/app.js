@@ -24,8 +24,10 @@ module.exports = async () => {
     const worky = rawCache["WORKS"]
 
     Object.keys(worky).map(key => {
+        // Doesn't work now: archive has outdated key
         if (Math.random() > 0.99) console.log(worky[key])
     })
+
 
     // app.use(routes)
 

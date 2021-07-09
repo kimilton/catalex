@@ -1,9 +1,6 @@
 const CONSTANTS = require('../../const')
 
-const UNSAFE_ID_SEPARATOR = '-'
-const SAFE_ID_SEPARATOR = '_'
-
-const DEFUALT_MODEL = {
+const getDefaultModel = () => ({
     id: "",
     dirPath: "",
     fullFilePath: "",
@@ -14,17 +11,10 @@ const DEFUALT_MODEL = {
     createdMonth: 0,
     downloadedTimestamp: 0,
     image: "",
-    ranking: CONSTANTS.UNRANKED,
     tags: [],
-}
+})
 
-const getDefaultModel = () => DEFUALT_MODEL
-
-const toSafeId = unsafe => unsafe.split(UNSAFE_ID_SEPARATOR).join(SAFE_ID_SEPARATOR)
-const toUnsafeId = safe => safe.split(SAFE_ID_SEPARATOR).join(UNSAFE_ID_SEPARATOR)
-const rawToWork = raw => ({...DEFUALT_MODEL, ...raw})
+const rawToWork = raw => ({...getDefaultModel(), ...raw})
 
 exports.getDefaultModel = getDefaultModel
-exports.toSafeId = toSafeId
-exports.toUnsafeId = toUnsafeId
 exports.rawToWork = rawToWork

@@ -1,14 +1,20 @@
 const cloneDeep = require('lodash/cloneDeep')
 const freezeDeep = require('deep-freeze-node');
 
-const { rawToWork, toSafeId } = require('../model/works/')
+const { rawToWork, toSafeId, getDefaultPerformers, getDefaultRankings, getDefaultWorks } = require('../model')
 const { scanDirectory } = require('../filesystem')
 
 const CONSTANTS = require('../const')
 
+const SUBCACHE_DEFAULT_GETTERS = {
+    [CONSTANTS.PERFORMERS]: getDefaultPerformers,
+    [CONSTANTS.RANKINGS]: getDefaultRankings,
+    [CONSTANTS.WORKS]: getDefaultWorks,
+}
 
 class SubCache {
     partialIdentifier
+    updateCallbacks = []
     constructor(cacheData={}){
         this._cache = cacheData
     }
@@ -18,21 +24,49 @@ class SubCache {
     }
     importCache(data){
         let subCache = {}
-        if (!this.partialIdentifier){
-            throw new Error(`Cache error: No partial identifier registered`)
-        }
         if (data.hasOwnProperty(this.partialIdentifier)){
             subCache = cloneDeep(data[this.partialIdentifier])
         }
         this._cache = subCache
     }
-    importRawList(){
+    addEntry(newEntry){
+        const getDefaultModel = SUBCACHE_DEFAULT_GETTERS[this.partialIdentifier]
+        if (typeof newEntry.id !== "string" || newEntry.id.length < 3){
+            throw new Error(CONSTANTS.ERROR_INVALID_ID)
+        }
+        const id = toSafeId(newEntry.id)
+        if (typeof this._cache[id] !== "undefined"){
+            throw new Error(CONSTANTS.ERROR_ENTRY_EXISTS)
+        }
+        const entry = getDefaultModel()
+        for (let attribute of Object.keys(entry)){
+            if (newEntry.hasOwnProperty(attribute)){
+                entry[attribute] = newEntry[attribute]
+            }
+        }
+        this._cache[id] = entry
+        this.updateCallbacks.forEach(cb => {
+            cb(this.partialIdentifier, CONSTANTS.OPS_ADD, id, entry)
+        })
+    }
+    updateEntry(){
         // no-op
+        throw new Error(CONSTANTS.ERROR_UNIMPLEMENTED)
+    }
+    deleteEntry(){
+        // no-op
+        throw new Error(CONSTANTS.ERROR_UNIMPLEMENTED)
+    }
+    say(){
+        console.log(this.partialIdentifier)
     }
 }
 
 class WorksCache extends SubCache {
-    partialIdentifier = CONSTANTS.CACHE_ID_WORKS
+    partialIdentifier = CONSTANTS.WORKS
+    constructor(data){
+        super(data)
+    }
     importRawList(rawList){
         for (let raw of rawList){
             const { id } = raw
@@ -46,11 +80,11 @@ class WorksCache extends SubCache {
 }
 
 class PerformersCache extends SubCache {
-    partialIdentifier = CONSTANTS.CACHE_ID_PERFORMERS
+    partialIdentifier = CONSTANTS.PERFORMERS
 }
 
 class RankingsCache extends SubCache {
-    partialIdentifier = CONSTANTS.CACHE_ID_RANKINGS
+    partialIdentifier = CONSTANTS.RANKINGS
 }
 
 const initializePrimeCache = async (loadedData = {}, performScan = false) => {
@@ -60,14 +94,20 @@ const initializePrimeCache = async (loadedData = {}, performScan = false) => {
     }
 
     const primeCache = {
-        [CONSTANTS.CACHE_ID_WORKS]: new WorksCache(),
-        [CONSTANTS.CACHE_ID_PERFORMERS]: new PerformersCache(),
-        [CONSTANTS.CACHE_ID_RANKINGS]: new RankingsCache(),
+        [CONSTANTS.WORKS]: new WorksCache(),
+        [CONSTANTS.PERFORMERS]: new PerformersCache(),
+        [CONSTANTS.RANKINGS]: new RankingsCache(),
+        [CONSTANTS.PRIME_CACHE_IDENTIFIER]: true,
     }
 
+    Object.defineProperty(
+        primeCache,
+        CONSTANTS.PRIME_CACHE_IDENTIFIER,
+        { configurable: false, writable: false, enumerable: false }
+    )
+
     for (subcache of Object.values(primeCache)){
-        subcache.importCache(loadedData)
-        if (scanList){
+        if (scanList && subCache.hasOwnProperty('importRawList')){
             subcache.importRawList(scanList)
         }
     }
@@ -75,6 +115,9 @@ const initializePrimeCache = async (loadedData = {}, performScan = false) => {
 }
 
 const convertPrimeCacheToRaw = primeCache => {
+    if (!primeCache[CONSTANTS.PRIME_CACHE_IDENTIFIER]){
+        throw new Error(CONSTANTS.ERROR_INVALID_CACHE_TYPE)
+    }
     let rawCache = {}
     for (cacheId of Object.keys(primeCache)){
         rawCache[cacheId] = primeCache[cacheId].getCache()
