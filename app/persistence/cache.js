@@ -29,6 +29,9 @@ class SubCache {
         }
         this._cache = subCache
     }
+    importRawList(){
+        // no-op
+    }
     addEntry(newEntry){
         const getDefaultModel = SUBCACHE_DEFAULT_GETTERS[this.partialIdentifier]
         if (typeof newEntry.id !== "string" || newEntry.id.length < 3){
@@ -56,9 +59,6 @@ class SubCache {
     deleteEntry(){
         // no-op
         throw new Error(CONSTANTS.ERROR_UNIMPLEMENTED)
-    }
-    say(){
-        console.log(this.partialIdentifier)
     }
 }
 
@@ -93,6 +93,8 @@ const initializePrimeCache = async (loadedData = {}, performScan = false) => {
         scanList = await scanDirectory()
     }
 
+    console.log(Object.keys(loadedData))
+
     const primeCache = {
         [CONSTANTS.WORKS]: new WorksCache(),
         [CONSTANTS.PERFORMERS]: new PerformersCache(),
@@ -106,8 +108,9 @@ const initializePrimeCache = async (loadedData = {}, performScan = false) => {
         { configurable: false, writable: false, enumerable: false }
     )
 
-    for (subcache of Object.values(primeCache)){
-        if (scanList && subCache.hasOwnProperty('importRawList')){
+    for (let subcache of Object.values(primeCache)){
+        subcache.importCache(loadedData)
+        if (scanList){
             subcache.importRawList(scanList)
         }
     }
@@ -119,7 +122,7 @@ const convertPrimeCacheToRaw = primeCache => {
         throw new Error(CONSTANTS.ERROR_INVALID_CACHE_TYPE)
     }
     let rawCache = {}
-    for (cacheId of Object.keys(primeCache)){
+    for (let cacheId of Object.keys(primeCache)){
         rawCache[cacheId] = primeCache[cacheId].getCache()
     }
     return rawCache

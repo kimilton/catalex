@@ -1,4 +1,4 @@
-const { writeToFile, loadFromFile } = require('./save')
+const { writeToFile, loadFromFile } = require('./rw')
 const { scanDirectory } = require('./scan')
 
 module.exports = {

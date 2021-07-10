@@ -1,6 +1,6 @@
 const express = require('express')
 
-const { loadFromFile } = require('./filesystem')
+const { loadFromFile, writeToFile } = require('./filesystem')
 const { initializePrimeCache, convertPrimeCacheToRaw } = require('./persistence')
 const routes = require('./routes')
 
@@ -18,21 +18,34 @@ module.exports = async () => {
         console.error(fileLoadError)
         return
     }
+
     const primeCache = await initializePrimeCache(loaded)
-    const rawCache = convertPrimeCacheToRaw(primeCache)
 
-    const worky = rawCache["WORKS"]
+    // await _manuallyOverriteFile(primeCache)
 
-    Object.keys(worky).map(key => {
-        // Doesn't work now: archive has outdated key
-        if (Math.random() > 0.99) console.log(worky[key])
+    app.use(routes)
+
+    app.listen(port, () => {
+        console.log(`Example app listening at http://localhost:${port}`)
     })
 
+}
 
-    // app.use(routes)
+const _manuallyOverriteFile = async primeCache => {
+    const rawCache = convertPrimeCacheToRaw(primeCache)
+    const writeResult = await writeToFile(rawCache)
+    if (writeResult !== CONSTANTS.SUCCESS){
+        console.error(writeResult)
+        return
+    }
+}
 
-    // app.listen(port, () => {
-    //     console.log(`Example app listening at http://localhost:${port}`)
-    // })
-
+const _manuallyVerifyPrimeCache = primeCache => {
+    const rawCache = convertPrimeCacheToRaw(primeCache)
+    Object.keys(rawCache).map(key => {
+        console.log(key)
+        Object.values(rawCache[key]).map(entry => {
+            if (Math.random() > 0.995) console.log(entry)
+        })
+    })
 }
