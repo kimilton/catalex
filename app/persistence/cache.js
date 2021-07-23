@@ -1,7 +1,7 @@
 const cloneDeep = require('lodash/cloneDeep')
 const freezeDeep = require('deep-freeze-node');
 
-const { rawToWork, toSafeId, getDefaultPerformers, getDefaultRankings, getDefaultWorks } = require('../model')
+const { rawToWork, certifyEntry, toSafeId, getDefaultPerformers, getDefaultRankings, getDefaultWorks } = require('../model')
 const { scanDirectory } = require('../filesystem')
 
 const CONSTANTS = require('../const')
@@ -47,7 +47,7 @@ class SubCache {
                 entry[attribute] = newEntry[attribute]
             }
         }
-        this._cache[id] = entry
+        this._cache[id] = certifyEntry(entry)
         this.updateCallbacks.forEach(cb => {
             cb(this.partialIdentifier, CONSTANTS.OPS_ADD, id, entry)
         })
@@ -87,13 +87,11 @@ class RankingsCache extends SubCache {
     partialIdentifier = CONSTANTS.RANKINGS
 }
 
-const initializePrimeCache = async (loadedData = {}, performScan = false) => {
+const initializePrimeCache = async (pointer, loadedData = {}, performScan = false) => {
     let scanList
     if (performScan){
         scanList = await scanDirectory()
     }
-
-    console.log(Object.keys(loadedData))
 
     const primeCache = {
         [CONSTANTS.WORKS]: new WorksCache(),
@@ -114,7 +112,7 @@ const initializePrimeCache = async (loadedData = {}, performScan = false) => {
             subcache.importRawList(scanList)
         }
     }
-    return primeCache
+    pointer = primeCache
 }
 
 const convertPrimeCacheToRaw = primeCache => {

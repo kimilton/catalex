@@ -1,11 +1,12 @@
-const { WorksCache, PerformersCache, RankingsCache, mergeCaches, initializePrimeCache, convertPrimeCacheToRaw } = require('./cache')
+const { WorksCache, PerformersCache, RankingsCache, initializePrimeCache, convertPrimeCacheToRaw } = require('./cache')
 
+const singletonCache = {}
 
 module.exports = {
     WorksCache,
     PerformersCache,
     RankingsCache,
-    mergeCaches,
+    singletonCache,
     initializePrimeCache,
     convertPrimeCacheToRaw,
 }

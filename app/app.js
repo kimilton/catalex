@@ -1,7 +1,7 @@
 const express = require('express')
 
 const { loadFromFile, writeToFile } = require('./filesystem')
-const { initializePrimeCache, convertPrimeCacheToRaw } = require('./persistence')
+const { singletonCache, initializePrimeCache, convertPrimeCacheToRaw } = require('./persistence')
 const routes = require('./routes')
 
 const CONSTANTS = require('./const')
@@ -19,7 +19,7 @@ module.exports = async () => {
         return
     }
 
-    const primeCache = await initializePrimeCache(loaded)
+    initializePrimeCache(singletonCache, loaded)
 
     // await _manuallyOverriteFile(primeCache)
 

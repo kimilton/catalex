@@ -21,4 +21,7 @@ module.exports = {
     "OPS_DELETE": "OPS_DELETE",
 
     "PRIME_CACHE_IDENTIFIER": "_isPrimeCache",
+
+    "MULTI_KEY": "__multi__",
+    "RELATION_SEPARATOR": "__",
 }
