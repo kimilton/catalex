@@ -7,7 +7,7 @@ const CONSTANTS = require('../const')
 
 const router = express.Router()
 
-router.get('/', function (req, res) {
+router.get('/', (req, res) => {
     const worksCache = getSubCache(CONSTANTS.WORKS)
     const entries = worksCache.read()
 
@@ -15,7 +15,7 @@ router.get('/', function (req, res) {
     res.json(jsonWrap(entriesId))
 })
 
-router.get('/:workId', function (req, res) {
+router.get('/:workId', (req, res) => {
     let workId = req.params.workId
     if (!workId) res.status(400).json(jsonWrapErr(CONSTANTS.ERROR_INVALID_ID)).end()
 

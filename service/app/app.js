@@ -23,7 +23,8 @@ module.exports = async () => {
 
     // await _manuallyOverriteFile()
     // _manuallyVerifyPrimeCache()
-
+    
+    app.use(express.json())
     app.use(routes)
 
     app.listen(port, () => {
