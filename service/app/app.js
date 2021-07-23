@@ -1,7 +1,7 @@
 const express = require('express')
 
 const { loadFromFile, writeToFile } = require('./filesystem')
-const { singletonCache, initializePrimeCache, convertPrimeCacheToRaw } = require('./persistence')
+const { initializePrimeCache, convertPrimeCacheToRaw } = require('./persistence')
 const routes = require('./routes')
 
 const CONSTANTS = require('./const')
@@ -19,9 +19,10 @@ module.exports = async () => {
         return
     }
 
-    initializePrimeCache(singletonCache, loaded)
+    await initializePrimeCache(loaded)
 
-    // await _manuallyOverriteFile(primeCache)
+    // await _manuallyOverriteFile()
+    // _manuallyVerifyPrimeCache()
 
     app.use(routes)
 
@@ -31,8 +32,8 @@ module.exports = async () => {
 
 }
 
-const _manuallyOverriteFile = async primeCache => {
-    const rawCache = convertPrimeCacheToRaw(primeCache)
+const _manuallyOverriteFile = async () => {
+    const rawCache = convertPrimeCacheToRaw()
     const writeResult = await writeToFile(rawCache)
     if (writeResult !== CONSTANTS.SUCCESS){
         console.error(writeResult)
@@ -40,8 +41,8 @@ const _manuallyOverriteFile = async primeCache => {
     }
 }
 
-const _manuallyVerifyPrimeCache = primeCache => {
-    const rawCache = convertPrimeCacheToRaw(primeCache)
+const _manuallyVerifyPrimeCache = () => {
+    const rawCache = convertPrimeCacheToRaw()
     Object.keys(rawCache).map(key => {
         console.log(key)
         Object.values(rawCache[key]).map(entry => {

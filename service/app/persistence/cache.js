@@ -4,7 +4,11 @@ const freezeDeep = require('deep-freeze-node');
 const { rawToWork, certifyEntry, toSafeId, getDefaultPerformers, getDefaultRankings, getDefaultWorks } = require('../model')
 const { scanDirectory } = require('../filesystem')
 
+let singletonCache = {}
+
 const CONSTANTS = require('../const')
+
+const SUBCACHE_LIST = [CONSTANTS.PERFORMERS, CONSTANTS.RANKINGS, CONSTANTS.WORKS]
 
 const SUBCACHE_DEFAULT_GETTERS = {
     [CONSTANTS.PERFORMERS]: getDefaultPerformers,
@@ -18,7 +22,7 @@ class SubCache {
     constructor(cacheData={}){
         this._cache = cacheData
     }
-    getCache(){
+    read(){
         const cloned = cloneDeep(this._cache)
         return freezeDeep(cloned)
     }
@@ -87,7 +91,7 @@ class RankingsCache extends SubCache {
     partialIdentifier = CONSTANTS.RANKINGS
 }
 
-const initializePrimeCache = async (pointer, loadedData = {}, performScan = false) => {
+const initializePrimeCache = async (loadedData = {}, performScan = false) => {
     let scanList
     if (performScan){
         scanList = await scanDirectory()
@@ -112,18 +116,30 @@ const initializePrimeCache = async (pointer, loadedData = {}, performScan = fals
             subcache.importRawList(scanList)
         }
     }
-    pointer = primeCache
+    singletonCache = primeCache
+    return singletonCache
 }
 
-const convertPrimeCacheToRaw = primeCache => {
+const convertPrimeCacheToRaw = givenPrimeCache => {
+    const primeCache = givenPrimeCache || singletonCache
     if (!primeCache[CONSTANTS.PRIME_CACHE_IDENTIFIER]){
         throw new Error(CONSTANTS.ERROR_INVALID_CACHE_TYPE)
     }
     let rawCache = {}
     for (let cacheId of Object.keys(primeCache)){
-        rawCache[cacheId] = primeCache[cacheId].getCache()
+        rawCache[cacheId] = primeCache[cacheId].read()
     }
     return rawCache
+}
+
+
+const getSubCache = (subCacheId, givenPrimeCache) => {
+    const primeCache = givenPrimeCache || singletonCache
+    const normalizedSubCacheId = subCacheId.toUpperCase()
+    if (!SUBCACHE_LIST.includes(normalizedSubCacheId)){
+        throw new Error(CONSTANTS.ERROR_INVALID_CACHE_TYPE)
+    }
+    return primeCache[normalizedSubCacheId]
 }
 
 module.exports = {
@@ -132,4 +148,5 @@ module.exports = {
     RankingsCache,
     initializePrimeCache,
     convertPrimeCacheToRaw,
+    getSubCache,
 }
