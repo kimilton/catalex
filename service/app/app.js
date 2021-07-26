@@ -20,9 +20,6 @@ module.exports = async () => {
     }
 
     await initializePrimeCache(loaded)
-
-    // await _manuallyOverriteFile()
-    // _manuallyVerifyPrimeCache()
     
     app.use(express.json())
     app.use(routes)
@@ -31,23 +28,4 @@ module.exports = async () => {
         console.log(`Example app listening at http://localhost:${port}`)
     })
 
-}
-
-const _manuallyOverriteFile = async () => {
-    const rawCache = convertPrimeCacheToRaw()
-    const writeResult = await writeToFile(rawCache)
-    if (writeResult !== CONSTANTS.SUCCESS){
-        console.error(writeResult)
-        return
-    }
-}
-
-const _manuallyVerifyPrimeCache = () => {
-    const rawCache = convertPrimeCacheToRaw()
-    Object.keys(rawCache).map(key => {
-        console.log(key)
-        Object.values(rawCache[key]).map(entry => {
-            if (Math.random() > 0.995) console.log(entry)
-        })
-    })
 }
