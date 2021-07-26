@@ -1,4 +1,6 @@
-const CONSTANTS = require('../../const')
+const cloneDeep = require('lodash/cloneDeep')
+
+const CONSTANTS = require('../const')
 
 const UNSAFE_ID_SEPARATOR = '-'
 const SAFE_ID_SEPARATOR = '_'
@@ -44,10 +46,17 @@ const numToFixed = (num, fixedLength=CONSTANTS.ID_SUFFIX_DIGIT_LENGTH) => {
     return numStr
 }
 
-const certifyEntry = entry => ({
-    ...entry,
-    timestamp: Date.now()
-})
+const cloneAndCertify = entry => {
+    const clonedEntry = cloneDeep(entry)
+    if (!clonedEntry[CONSTANTS.SANITIZATION_SEAL_KEY]){
+        throw new Error(CONSTANTS.ERROR_UNSAFE_OPERATION)
+    }
+    delete clonedEntry[CONSTANTS.SANITIZATION_SEAL_KEY]
+    return {
+        ...clonedEntry,
+        timestamp: Date.now()
+    }
+}
 
 
 const constructDefaultModel = modelSchema => {
@@ -83,10 +92,11 @@ const sanitizeRequest = (insertionRequest, model) => {
             return CONSTANTS.ERROR_MISSING_INFO
         }
     }
+    validatedRequest[CONSTANTS.SANITIZATION_SEAL_KEY] = true
     return validatedRequest
 }
 
-exports.certifyEntry = certifyEntry
+exports.cloneAndCertify = cloneAndCertify
 exports.constructDefaultModel = constructDefaultModel
 exports.sanitizeRequest = sanitizeRequest
 exports.toSafeId = toSafeId

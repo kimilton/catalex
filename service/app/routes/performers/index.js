@@ -1,24 +1,23 @@
 const express = require('express')
 
+const { addNewPerformer } = require('./operations')
+const { getSubCache } = require('../../persistence')
+const { jsonWrap, jsonWrapErr } = require('../../protocol')
 const CONSTANTS = require('../../const')
-const { getPerformerInsertion } = require('../../model')
 
 const router = express.Router()
 
-
 router.get('/', (req, res) => {
-    res.send('/performers')
+    const worksCache = getSubCache(CONSTANTS.PERFORMERS)
+    const entries = worksCache.read()
+    const entriesId = Object.keys(entries)
+    res.json(jsonWrap(entriesId))
 })
 
 router.get('/:performerId', (req, res) => {
     res.send(`/performers/${req.params.performerId}`)
 })
 
-router.post('/add', (req, res) => {
-    console.log(req.body)
-    const performerInsertionObject = getPerformerInsertion(req.body, v => v)
-    console.log(performerInsertionObject)
-    res.json(performerInsertionObject)
-})
+router.post('/add', addNewPerformer)
 
 module.exports = router

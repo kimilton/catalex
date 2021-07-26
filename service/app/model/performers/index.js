@@ -57,8 +57,7 @@ const getInsertionObject = (insertionRequest, primaryKeyValidator) => {
         ...insertionRequest,
         [CONSTANTS.ID_COLUMN_KEY]: extractedId
     }
-    console.log(extractedId)
-    return sanitizeRequest(insertionRequestWithId, DEFAULT_MODEL)
+    return sanitizeRequest(insertionRequestWithId, MODEL_SCHEMA)
 }
 
 const generateIdFromName = (firstName, lastName, suffix) => {

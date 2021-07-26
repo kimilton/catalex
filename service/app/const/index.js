@@ -23,12 +23,15 @@ module.exports = {
     "ERROR_SERVICE_ERROR": "ERROR_SERVICE_ERROR",
     "ERROR_INVALID_OPERATION": "ERROR_INVALID_OPERATION",
     "ERROR_OUT_OF_BOUNDS": "ERROR_OUT_OF_BOUNDS",
+    "ERROR_UNSAFE_OPERATION": "ERROR_UNSAFE_OPERATION",
 
     "OPS_ADD": "OPS_ADD",
     "OPS_UPDATE": "OPS_UPDATE",
     "OPS_DELETE": "OPS_DELETE",
 
     "PRIME_CACHE_IDENTIFIER": "_isPrimeCache",
+
+    "SANITIZATION_SEAL_KEY": "_sanitized",
 
     "MULTI_KEY": "__multi__",
     "RELATION_SEPARATOR": "__",
@@ -45,4 +48,5 @@ module.exports = {
     "FULLFILEPATH_COLUMN_KEY": "_fullpath",
     "CLASS_COLUMN_KEY": "_class",
     "VALUE_COLUMN_KEY": "_value",
+    "TIMESTAMP_COLUMN_KEY": "_timestamp",
 }

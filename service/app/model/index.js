@@ -1,16 +1,16 @@
 const { getDefaultModel: getDefaultAttributes } = require('./attributes')
-const { getDefaultModel: getDefaultPerformers, getInsertionObject: getPerformerInsertion } = require('./performers')
+const { getDefaultModel: getDefaultPerformers, getInsertionObject: getPerformerInsertionObject } = require('./performers')
 const { getDefaultModel: getDefaultWorks, generateRawObject, rawToWork } = require('./works')
-const { certifyEntry, toSafeId, toUnsafeId, numToFixed } = require('./shared')
+const { cloneAndCertify, toSafeId, toUnsafeId, numToFixed } = require('./shared')
 
 module.exports = {
     getDefaultPerformers,
-    getPerformerInsertion,
+    getPerformerInsertionObject,
     getDefaultAttributes,
     getDefaultWorks,
     generateRawObject,
     rawToWork,
-    certifyEntry,
+    cloneAndCertify,
     toSafeId,
     toUnsafeId,
     numToFixed

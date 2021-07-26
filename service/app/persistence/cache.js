@@ -1,7 +1,7 @@
 const cloneDeep = require('lodash/cloneDeep')
 const freezeDeep = require('deep-freeze-node');
 
-const { rawToWork, certifyEntry, toSafeId, getDefaultPerformers, getDefaultAttributes, getDefaultWorks } = require('../model')
+const { rawToWork, cloneAndCertify, toSafeId } = require('../model')
 const { scanDirectory } = require('../filesystem')
 
 let singletonCache = {}
@@ -9,12 +9,6 @@ let singletonCache = {}
 const CONSTANTS = require('../const')
 
 const SUBCACHE_LIST = [CONSTANTS.PERFORMERS, CONSTANTS.ATTRIBUTES, CONSTANTS.WORKS]
-
-const SUBCACHE_DEFAULT_GETTERS = {
-    [CONSTANTS.PERFORMERS]: getDefaultPerformers,
-    [CONSTANTS.ATTRIBUTES]: getDefaultAttributes,
-    [CONSTANTS.WORKS]: getDefaultWorks,
-}
 
 class SubCache {
     partialIdentifier
@@ -37,25 +31,25 @@ class SubCache {
         // no-op
     }
     addEntry(newEntry){
-        const getDefaultModel = SUBCACHE_DEFAULT_GETTERS[this.partialIdentifier]
         const unsafeId = newEntry[CONSTANTS.ID_COLUMN_KEY]
         if (typeof unsafeId !== "string" || unsafeId.length < 3){
             throw new Error(CONSTANTS.ERROR_INVALID_ID)
         }
-        const id = toSafeId(unsafeId)
-        if (typeof this._cache[id] !== "undefined"){ // TODO: Implement .hasEntry()
+        const safeId = toSafeId(unsafeId)
+        if (this.hasEntry(safeId)){
             throw new Error(CONSTANTS.ERROR_ENTRY_EXISTS)
         }
-        const entry = getDefaultModel()
-        for (let attribute of Object.keys(entry)){
-            if (newEntry.hasOwnProperty(attribute)){
-                entry[attribute] = newEntry[attribute]
-            }
-        }
-        this._cache[id] = certifyEntry(entry)
+        const certifiedEntry = cloneAndCertify(newEntry)
+        this._cache[safeId] = certifiedEntry
         this.updateCallbacks.forEach(cb => {
-            cb(this.partialIdentifier, CONSTANTS.OPS_ADD, id, entry)
+            cb(this.partialIdentifier, CONSTANTS.OPS_ADD, id, newEntry)
         })
+        console.log(`[${this.partialIdentifier}] Cache entry created for ${safeId}. Object to follow:`)
+        console.log(certifiedEntry)
+        return certifiedEntry
+    }
+    hasEntry(entryId){
+        return typeof this._cache[entryId] !== "undefined"
     }
     updateEntry(){
         // no-op
