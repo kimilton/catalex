@@ -1,22 +1,14 @@
 const express = require('express')
 
 const { addNewPerformer } = require('./operations')
-const { getSubCache } = require('../../persistence')
-const { jsonWrap, jsonWrapErr } = require('../../protocol')
+const { endpoint_AllEntries, endpoint_SingleEntry } = require('../shared')
 const CONSTANTS = require('../../const')
 
 const router = express.Router()
 
-router.get('/', (req, res) => {
-    const worksCache = getSubCache(CONSTANTS.PERFORMERS)
-    const entries = worksCache.read()
-    const entriesId = Object.keys(entries)
-    res.json(jsonWrap(entriesId))
-})
+router.get('/', endpoint_AllEntries(CONSTANTS.PERFORMERS))
 
-router.get('/:performerId', (req, res) => {
-    res.send(`/performers/${req.params.performerId}`)
-})
+router.get('/:performerId', endpoint_SingleEntry('performerId', CONSTANTS.PERFORMERS))
 
 router.post('/add', addNewPerformer)
 
