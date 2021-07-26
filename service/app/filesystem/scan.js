@@ -1,29 +1,26 @@
 const fs = require('fs/promises')
 const path = require('path')
 
+const { generateRawObject } = require('../model')
+
 const scanDirectory = async () => {
     const { catalexRawPath, catalexExtension } = process.env
-    const filesList = await recurseDirectory(catalexRawPath, catalexExtension, [])
-    console.log(`Scanned ${filesList.length} valid files`)
-
-    return filesList
+    const rawFilesList = await recurseDirAndCollectRaw(catalexRawPath, catalexExtension, [])
+    console.log(`Scanned ${rawFilesList.length} valid files`)
+    return rawFilesList
 }
 
-const recurseDirectory = async (dirPath, extension, filesList=[]) => {
+const recurseDirAndCollectRaw = async (dirPath, extension, filesList=[]) => {
     try {
         const dir = await fs.opendir(dirPath)
         for await(const dirent of dir){
             const { name } = dirent
             if (dirent.isDirectory()){
-                filesList.concat(await recurseDirectory(`${dirPath}${path.sep}${name}`, extension, filesList))
+                filesList.concat(await recurseDirAndCollectRaw(`${dirPath}${path.sep}${name}`, extension, filesList))
             } else if (dirent.isFile() && path.extname(name).slice(1) === extension){
                 let objectId = path.basename(name, extension).toUpperCase()
                 objectId = objectId.slice(0, objectId.length - 1)
-                const rawObject = {
-                    id: objectId,
-                    dirPath: dirPath,
-                    fullFilePath: dirPath + path.sep + name
-                }
+                const rawObject = generateRawObject(objectId, dirPath, dirPath + path.sep + name)
                 filesList.push(rawObject)
             }
         }

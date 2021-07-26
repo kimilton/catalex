@@ -1,18 +1,18 @@
 const cloneDeep = require('lodash/cloneDeep')
 const freezeDeep = require('deep-freeze-node');
 
-const { rawToWork, certifyEntry, toSafeId, getDefaultPerformers, getDefaultRankings, getDefaultWorks } = require('../model')
+const { rawToWork, certifyEntry, toSafeId, getDefaultPerformers, getDefaultAttributes, getDefaultWorks } = require('../model')
 const { scanDirectory } = require('../filesystem')
 
 let singletonCache = {}
 
 const CONSTANTS = require('../const')
 
-const SUBCACHE_LIST = [CONSTANTS.PERFORMERS, CONSTANTS.RANKINGS, CONSTANTS.WORKS]
+const SUBCACHE_LIST = [CONSTANTS.PERFORMERS, CONSTANTS.ATTRIBUTES, CONSTANTS.WORKS]
 
 const SUBCACHE_DEFAULT_GETTERS = {
     [CONSTANTS.PERFORMERS]: getDefaultPerformers,
-    [CONSTANTS.RANKINGS]: getDefaultRankings,
+    [CONSTANTS.ATTRIBUTES]: getDefaultAttributes,
     [CONSTANTS.WORKS]: getDefaultWorks,
 }
 
@@ -38,11 +38,12 @@ class SubCache {
     }
     addEntry(newEntry){
         const getDefaultModel = SUBCACHE_DEFAULT_GETTERS[this.partialIdentifier]
-        if (typeof newEntry.id !== "string" || newEntry.id.length < 3){
+        const unsafeId = newEntry[CONSTANTS.ID_COLUMN_KEY]
+        if (typeof unsafeId !== "string" || unsafeId.length < 3){
             throw new Error(CONSTANTS.ERROR_INVALID_ID)
         }
-        const id = toSafeId(newEntry.id)
-        if (typeof this._cache[id] !== "undefined"){
+        const id = toSafeId(unsafeId)
+        if (typeof this._cache[id] !== "undefined"){ // TODO: Implement .hasEntry()
             throw new Error(CONSTANTS.ERROR_ENTRY_EXISTS)
         }
         const entry = getDefaultModel()
@@ -73,8 +74,8 @@ class WorksCache extends SubCache {
     }
     importRawList(rawList){
         for (let raw of rawList){
-            const { id } = raw
-            const safeId = toSafeId(id)
+            const unsafeId = raw[CONSTANTS.ID_COLUMN_KEY]
+            const safeId = toSafeId(unsafeId)
             if (!this._cache.hasOwnProperty(safeId)){
                 const work = rawToWork(raw)
                 this._cache[safeId] = work
@@ -87,8 +88,8 @@ class PerformersCache extends SubCache {
     partialIdentifier = CONSTANTS.PERFORMERS
 }
 
-class RankingsCache extends SubCache {
-    partialIdentifier = CONSTANTS.RANKINGS
+class AttributesCache extends SubCache {
+    partialIdentifier = CONSTANTS.ATTRIBUTES
 }
 
 const initializePrimeCache = async (loadedData = {}, performScan = false) => {
@@ -100,7 +101,7 @@ const initializePrimeCache = async (loadedData = {}, performScan = false) => {
     const primeCache = {
         [CONSTANTS.WORKS]: new WorksCache(),
         [CONSTANTS.PERFORMERS]: new PerformersCache(),
-        [CONSTANTS.RANKINGS]: new RankingsCache(),
+        [CONSTANTS.ATTRIBUTES]: new AttributesCache(),
         [CONSTANTS.PRIME_CACHE_IDENTIFIER]: true,
     }
 
@@ -145,7 +146,7 @@ const getSubCache = (subCacheId, givenPrimeCache) => {
 module.exports = {
     WorksCache,
     PerformersCache,
-    RankingsCache,
+    AttributesCache,
     initializePrimeCache,
     convertPrimeCacheToRaw,
     getSubCache,

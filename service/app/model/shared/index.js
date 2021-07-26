@@ -50,9 +50,9 @@ const certifyEntry = entry => ({
 })
 
 
-const constructDefaultModel = () => {
+const constructDefaultModel = modelSchema => {
     let constructedModel = {}
-    for (let [key, config] of Object.entries(DEFAULT_MODEL)){
+    for (let [key, config] of Object.entries(modelSchema)){
         if (config.multiStore){
             constructedModel[key] = []
         } else {

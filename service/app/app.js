@@ -15,11 +15,12 @@ module.exports = async () => {
 
     const [ loaded, fileLoadError ] = await loadFromFile()
     if (fileLoadError) {
-        console.error(fileLoadError)
-        return
+        console.log('Unable to read file contents. Scanning.')
+        await initializePrimeCache({}, true)
+    } else {
+        console.log('Savefile loaded successfully.')
+        await initializePrimeCache(loaded)
     }
-
-    await initializePrimeCache(loaded)
     
     app.use(express.json())
     app.use(routes)

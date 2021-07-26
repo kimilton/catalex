@@ -1,7 +1,7 @@
 const CONSTANTS = require('../../const')
 const { numToFixed, constructDefaultModel, sanitizeRequest } = require('../shared')
 
-const DEFAULT_MODEL = {
+const MODEL_SCHEMA = {
     [CONSTANTS.ID_COLUMN_KEY]: {
         required: true,
         primaryKey: true,
@@ -35,14 +35,9 @@ const DEFAULT_MODEL = {
         required: false,
         enforceType: CONSTANTS.DATATYPE_STRING,
     },
-    tags: {
-        required: false,
-        multiStore: true,
-        enforceType: CONSTANTS.DATATYPE_STRING,
-    }
 }
 
-const getDefaultModel = () => constructDefaultModel(DEFAULT_MODEL)
+const getDefaultModel = () => constructDefaultModel(MODEL_SCHEMA)
 
 const getInsertionObject = (insertionRequest, primaryKeyValidator) => {
     if (typeof primaryKeyValidator !== "function"){

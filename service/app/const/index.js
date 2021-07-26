@@ -4,7 +4,7 @@ module.exports = {
 
     "WORKS": "WORKS",
     "PERFORMERS": "PERFORMERS",
-    "RANKINGS": "RANKINGS",
+    "ATTRIBUTES": "ATTRIBUTES",
 
     "NA": "NA",
     "BOOLEAN_UNKNOWN": "BOOLEAN_UNKNOWN",
@@ -38,6 +38,9 @@ module.exports = {
     "DATATYPE_BOOLEAN": "DATATYPE_BOOLEAN",
     "DATATYPE_ANY": "DATATYPE_ANY",
 
-    "ID_COLUMN_KEY": "_id",
     "ID_SUFFIX_DIGIT_LENGTH": 3,
+
+    "ID_COLUMN_KEY": "_id",
+    "DIRPATH_COLUMN_KEY": "_dirpath",
+    "FULLFILEPATH_COLUMN_KEY": "_fullpath",
 }
