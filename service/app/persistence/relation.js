@@ -1,42 +1,68 @@
+
+const cloneDeep = require('lodash/cloneDeep')
+const freezeDeep = require('deep-freeze-node');
+
 const { toSafeId } = require('../model')
 const CONSTANTS = require('../const')
 
 class Relation {
+    relationIdentifier
     primary
     secondary
     primaryMultiple
     secondaryMultiple
+    maintainSecondaryIndex
+    static relationIdentifier
+    
     constructor(){
         this.pToS = {}
         this.sToP = {}
     }
+    read(){
+        const cloned = cloneDeep(this.pToS)
+        return freezeDeep(cloned)
+    }
+    importCache(data){
+        const id = this.relationIdentifier
+        let relCache = {}
+        if (data.hasOwnProperty(id)){
+            relCache = cloneDeep(data[id])
+        }
+        this.pToS = relCache
+        if (this.maintainSecondaryIndex){
+            // Build the secondary index here and now
+        }
+    }
     addRelations(pid, sid){
         const safePid = toSafeId(pid)
-        const safeSid = toSafeId(sid)
         if (!this.pToS.hasOwnProperty(safePid)){
-            this.pToS[safePid] = {}
-            if (this.primaryMultiple) this.pToS[safePid][CONSTANTS.MULTI_KEY] = new Set()
+            if (this.primaryMultiple){
+                this.pToS[safePid][CONSTANTS.MULTI_KEY] = new Set()
+            } else {
+                this.pToS[safePid] = {}
+            }
         }
-        if (!this.sToP.hasOwnProperty(safeSid)){
-            this.sToP[safeSid] = {}
-            if (this.secondaryMultiple) this.sToP[safeSid][CONSTANTS.MULTI_KEY] = new Set()
+        if (this.primaryMultiple){
+            this.pToS[safePid][CONSTANTS.MULTI_KEY].add(safeSid)
+        } else {
+            this.pToS[safePid][safeSid] = true
         }
-        this.pToS[safePid][safeSid] = true
-        this.sToP[safeSid][safePid] = true
-        if (this.primaryMultiple) this.pToS[safePid][CONSTANTS.MULTI_KEY].add(safeSid)
-        if (this.secondaryMultiple) this.sToP[safeSid][CONSTANTS.MULTI_KEY].add(safePid)
-    }
-    getId(){
-        return `${this.primary}${CONSTANTS.RELATION_SEPARATOR}${this.secondary}`
-    }
-    toRaw(){
-        try{
-            return [{
-                [this.primary]: JSON.stringify(this.pToS),
-                [this.secondary]: JSON.stringify(this.sToP),
-            }, null]
-        } catch (err){
-            return [null, err.toString()]
+
+        // Update secondary index at the same time
+        if (this.maintainSecondaryIndex){
+            const safeSid = toSafeId(sid)
+            if (!this.sToP.hasOwnProperty(safeSid)){
+                if (this.secondaryMultiple) {
+                    this.sToP[safeSid][CONSTANTS.MULTI_KEY] = new Set()
+                } else {
+                    this.sToP[safeSid] = {}
+                }
+            }
+            if (this.secondaryMultiple) {
+                this.sToP[safeSid][CONSTANTS.MULTI_KEY].add(safePid)
+            } else {
+                this.sToP[safeSid][safePid] = true
+            }
         }
     }
 }
@@ -46,6 +72,8 @@ class PerfsToWorksRelation extends Relation {
     secondary = CONSTANTS.WORKS
     primaryMultiple = true
     secondaryMultiple = true
+    maintainSecondaryIndex = true
+    static relationIdentifier = `${CONSTANTS.PERFORMERS}${CONSTANTS.RELATION_SEPARATOR}${CONSTANTS.WORKS}`
 }
 
 module.exports = {

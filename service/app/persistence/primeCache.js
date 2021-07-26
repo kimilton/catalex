@@ -9,21 +9,21 @@ const CONSTANTS = require('../const')
 const SUBCACHE_LIST = [
     {
         "key": CONSTANTS.PERFORMERS,
-        "instantiator": () => new WorksCache()
-    },
-    {
-        "key": CONSTANTS.ATTRIBUTES,
         "instantiator": () => new PerformersCache()
     },
     {
-        "key": CONSTANTS.WORKS,
+        "key": CONSTANTS.ATTRIBUTES,
         "instantiator": () => new AttributesCache()
+    },
+    {
+        "key": CONSTANTS.WORKS,
+        "instantiator": () => new WorksCache()
     }
 ]
 
 const RELATIONS_LIST = [
     {
-        "key": PerfsToWorksRelation.prototype.getId(),
+        "key": PerfsToWorksRelation.relationIdentifier,
         "instantiator": () => new PerfsToWorksRelation()
     },
 ]
@@ -49,9 +49,9 @@ const initializePrimeCache = async (loadedData = {}, performScan = false) => {
     })
 
     for (let subcache of Object.values(primeCache)){
-        if (subcache.hasOwnProperty('importCache') && typeof subcache.importCache === 'function'){
+        if (subcache.importCache && typeof subcache.importCache === 'function'){
             subcache.importCache(loadedData)
-            if (scanList){
+            if (scanList && subcache.importRawList && typeof subcache.importRawList === 'function'){
                 subcache.importRawList(scanList)
             }
         }
