@@ -1,9 +1,6 @@
-const { WorksCache, PerformersCache, AttributesCache, initializePrimeCache, convertPrimeCacheToRaw, getSubCache } = require('./cache')
+const { initializePrimeCache, convertPrimeCacheToRaw, getSubCache } = require('./primeCache')
 
 module.exports = {
-    WorksCache,
-    PerformersCache,
-    AttributesCache,
     initializePrimeCache,
     convertPrimeCacheToRaw,
     getSubCache,

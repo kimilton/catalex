@@ -1,14 +1,10 @@
+
 const cloneDeep = require('lodash/cloneDeep')
 const freezeDeep = require('deep-freeze-node');
 
 const { rawToWork, cloneAndCertify, toSafeId } = require('../model')
-const { scanDirectory } = require('../filesystem')
-
-let singletonCache = {}
 
 const CONSTANTS = require('../const')
-
-const SUBCACHE_LIST = [CONSTANTS.PERFORMERS, CONSTANTS.ATTRIBUTES, CONSTANTS.WORKS]
 
 class SubCache {
     partialIdentifier
@@ -86,62 +82,8 @@ class AttributesCache extends SubCache {
     partialIdentifier = CONSTANTS.ATTRIBUTES
 }
 
-const initializePrimeCache = async (loadedData = {}, performScan = false) => {
-    let scanList
-    if (performScan){
-        scanList = await scanDirectory()
-    }
-
-    const primeCache = {
-        [CONSTANTS.WORKS]: new WorksCache(),
-        [CONSTANTS.PERFORMERS]: new PerformersCache(),
-        [CONSTANTS.ATTRIBUTES]: new AttributesCache(),
-        [CONSTANTS.PRIME_CACHE_IDENTIFIER]: true,
-    }
-
-    Object.defineProperty(
-        primeCache,
-        CONSTANTS.PRIME_CACHE_IDENTIFIER,
-        { configurable: false, writable: false, enumerable: false }
-    )
-
-    for (let subcache of Object.values(primeCache)){
-        subcache.importCache(loadedData)
-        if (scanList){
-            subcache.importRawList(scanList)
-        }
-    }
-    singletonCache = primeCache
-    return singletonCache
-}
-
-const convertPrimeCacheToRaw = givenPrimeCache => {
-    const primeCache = givenPrimeCache || singletonCache
-    if (!primeCache[CONSTANTS.PRIME_CACHE_IDENTIFIER]){
-        throw new Error(CONSTANTS.ERROR_INVALID_CACHE_TYPE)
-    }
-    let rawCache = {}
-    for (let cacheId of Object.keys(primeCache)){
-        rawCache[cacheId] = primeCache[cacheId].read()
-    }
-    return rawCache
-}
-
-
-const getSubCache = (subCacheId, givenPrimeCache) => {
-    const primeCache = givenPrimeCache || singletonCache
-    const normalizedSubCacheId = subCacheId.toUpperCase()
-    if (!SUBCACHE_LIST.includes(normalizedSubCacheId)){
-        throw new Error(CONSTANTS.ERROR_INVALID_CACHE_TYPE)
-    }
-    return primeCache[normalizedSubCacheId]
-}
-
 module.exports = {
     WorksCache,
     PerformersCache,
     AttributesCache,
-    initializePrimeCache,
-    convertPrimeCacheToRaw,
-    getSubCache,
 }

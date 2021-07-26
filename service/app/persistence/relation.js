@@ -1,5 +1,5 @@
-const { toSafeId } = require('../index')
-const CONSTANTS = require('../../const')
+const { toSafeId } = require('../model')
+const CONSTANTS = require('../const')
 
 class Relation {
     primary
