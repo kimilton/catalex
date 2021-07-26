@@ -43,4 +43,6 @@ module.exports = {
     "ID_COLUMN_KEY": "_id",
     "DIRPATH_COLUMN_KEY": "_dirpath",
     "FULLFILEPATH_COLUMN_KEY": "_fullpath",
+    "CLASS_COLUMN_KEY": "_class",
+    "VALUE_COLUMN_KEY": "_value",
 }
