@@ -1,9 +1,9 @@
 const express = require('express')
 
-const { getSubCache } = require('../persistence')
-const { toSafeId } = require('../model')
-const { jsonWrap, jsonWrapErr } = require('../protocol')
-const CONSTANTS = require('../const')
+const { getSubCache } = require('../../persistence')
+const { toSafeId } = require('../../model')
+const { jsonWrap, jsonWrapErr } = require('../../protocol')
+const CONSTANTS = require('../../const')
 
 const router = express.Router()
 
