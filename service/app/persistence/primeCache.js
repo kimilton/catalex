@@ -1,5 +1,5 @@
 const { scanDirectory } = require('../filesystem')
-const { WorksCache, PerformersCache, AttributesCache } = require('./subcache')
+const { SubCache, WorksCache, PerformersCache, AttributesCache } = require('./subcache')
 const { PerfsToWorksRelation } = require('./relation')
 
 let singletonCache = {}
@@ -23,7 +23,6 @@ const SUBCACHE_LIST = [
 
 const RELATIONS_LIST = [
     {
-        "key": PerfsToWorksRelation.relationIdentifier,
         "instantiator": () => new PerfsToWorksRelation()
     },
 ]
@@ -44,8 +43,24 @@ const initializePrimeCache = async (loadedData = {}, performScan = false) => {
         { configurable: false, writable: false, enumerable: false }
     )
 
-    ;[...SUBCACHE_LIST, ...RELATIONS_LIST].forEach(({ key, instantiator }) => {
+    // Instantiate the list of subcaches and attach them to the primeCache
+    ;[...SUBCACHE_LIST].forEach(({ key, instantiator }) => {
         primeCache[key] = instantiator()
+    })
+
+    // Instantiate the list of relations, attach them, and register them to matching subcaches
+    ;[...RELATIONS_LIST].forEach(({ instantiator }) => {
+        const relation = instantiator()
+        const key = relation.getKey()
+        primeCache[key] = relation
+        const primary = relation.primary
+        const secondary = relation.secondary
+        if (primeCache[primary] instanceof SubCache){
+            primeCache[primary].registerRelation(relation, secondary)
+        }
+        if (primeCache[secondary] instanceof SubCache){
+            primeCache[secondary].registerRelation(relation, primary)
+        }
     })
 
     for (let subcache of Object.values(primeCache)){

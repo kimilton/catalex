@@ -1,5 +1,5 @@
 const CONSTANTS = require('../../const')
-const { getPerformerInsertionObject } = require('../../model')
+const { getPerformerInsertionObject, getPerformerUpdateObject } = require('../../model')
 const { getSubCache } = require('../../persistence')
 const { getDefaultIdValidator } = require('../shared')
 
@@ -15,6 +15,23 @@ const addNewPerformer = (req, res) => {
     res.json(savedObject)
 }
 
+const updatePerformer = (req, res) => {
+    // Grab the id from the request
+    let entryId = req.params["performerId"]
+    console.log('entryId', entryId)
+    // Get the relevant cache
+    const performersCache = getSubCache(CONSTANTS.PERFORMERS)
+    // Sanitize input and create and update object
+    const performerUpdateObject = getPerformerUpdateObject(req.body)
+    console.log(req.body)
+    console.log(performerUpdateObject)
+    console.log('\n')
+    // Cache applies the update and returns a copy of the merged object
+    const mergedObject = performersCache.updateEntry(entryId, performerUpdateObject)
+    res.json(mergedObject)
+}
+
 module.exports = {
-    addNewPerformer
+    addNewPerformer,
+    updatePerformer
 }

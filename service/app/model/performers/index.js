@@ -57,8 +57,10 @@ const getInsertionObject = (insertionRequest, primaryKeyValidator) => {
         ...insertionRequest,
         [CONSTANTS.ID_COLUMN_KEY]: extractedId
     }
-    return sanitizeRequest(insertionRequestWithId, MODEL_SCHEMA)
+    return sanitizeRequest(insertionRequestWithId, MODEL_SCHEMA, true)
 }
+
+const getUpdateObject = updateRequest => sanitizeRequest(updateRequest, MODEL_SCHEMA)
 
 const generateIdFromName = (firstName, lastName, suffix) => {
     if (firstName && lastName){
@@ -74,5 +76,6 @@ const generateIdFromName = (firstName, lastName, suffix) => {
 module.exports = {
     getDefaultModel,
     getInsertionObject,
+    getUpdateObject,
     generateIdFromName,
 }

@@ -6,13 +6,11 @@ const { toSafeId } = require('../model')
 const CONSTANTS = require('../const')
 
 class Relation {
-    relationIdentifier
     primary
     secondary
     primaryMultiple
     secondaryMultiple
     maintainSecondaryIndex
-    static relationIdentifier
     
     constructor(){
         this.pToS = {}
@@ -35,35 +33,47 @@ class Relation {
     }
     addRelations(pid, sid){
         const safePid = toSafeId(pid)
+        const safeSid = toSafeId(sid)
         if (!this.pToS.hasOwnProperty(safePid)){
             if (this.primaryMultiple){
                 this.pToS[safePid][CONSTANTS.MULTI_KEY] = new Set()
             } else {
-                this.pToS[safePid] = {}
+                this.pToS[safePid] = ""
             }
         }
         if (this.primaryMultiple){
             this.pToS[safePid][CONSTANTS.MULTI_KEY].add(safeSid)
         } else {
-            this.pToS[safePid][safeSid] = true
+            this.pToS[safePid] = safeSid
         }
 
         // Update secondary index at the same time
         if (this.maintainSecondaryIndex){
-            const safeSid = toSafeId(sid)
             if (!this.sToP.hasOwnProperty(safeSid)){
                 if (this.secondaryMultiple) {
                     this.sToP[safeSid][CONSTANTS.MULTI_KEY] = new Set()
                 } else {
-                    this.sToP[safeSid] = {}
+                    this.sToP[safeSid] = ""
                 }
             }
             if (this.secondaryMultiple) {
                 this.sToP[safeSid][CONSTANTS.MULTI_KEY].add(safePid)
             } else {
-                this.sToP[safeSid][safePid] = true
+                this.sToP[safeSid] = safePid
             }
         }
+    }
+    setRelations(pid, sids){
+        const safePid = toSafeId(pid)
+        if (this.primaryMultiple){
+            this.pToS[safePid][CONSTANTS.MULTI_KEY] = new Set(sids.map(toSafeId))
+        } else {
+            this.pToS[safePid] = toSafeId(sids)
+        }
+        // One way only. Figure out a good design for this endpoint
+    }
+    getKey(){
+        return `${this.primary}${CONSTANTS.RELATION_SEPARATOR}${this.secondary}`
     }
 }
 
@@ -73,7 +83,6 @@ class PerfsToWorksRelation extends Relation {
     primaryMultiple = true
     secondaryMultiple = true
     maintainSecondaryIndex = true
-    static relationIdentifier = `${CONSTANTS.PERFORMERS}${CONSTANTS.RELATION_SEPARATOR}${CONSTANTS.WORKS}`
 }
 
 module.exports = {

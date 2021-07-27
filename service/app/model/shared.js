@@ -8,7 +8,8 @@ const SAFE_ID_SEPARATOR = '_'
 const _validateDataType = (data, dataType) => {
     switch (dataType){
         case CONSTANTS.DATATYPE_BOOLEAN:
-            return typeof data === "boolean"
+            const isImplicitBoolean = ['TRUE', 'FALSE', CONSTANTS.BOOLEAN_UNKNOWN].includes(data.toUpperCase())
+            return typeof data === "boolean" || isImplicitBoolean
         case CONSTANTS.DATATYPE_NUMBER:
             return typeof data === "number"
         case CONSTANTS.DATATYPE_STRING:
@@ -30,6 +31,20 @@ const _getDataTypeDefaults = dataType => {
         case CONSTANTS.DATATYPE_ANY:
         default:
             return ""
+    }
+}
+
+const _castDataType = (data, dataType) => {
+    switch (dataType){
+        case CONSTANTS.DATATYPE_BOOLEAN:
+            if (data.toUpperCase() === "TRUE") return true
+            if (data.toUpperCase() === "FALSE") return false
+            return data
+        case CONSTANTS.DATATYPE_NUMBER:
+            return Number(data)
+        case CONSTANTS.DATATYPE_STRING:
+        case CONSTANTS.DATATYPE_ANY:
+            return data
     }
 }
 
@@ -71,24 +86,28 @@ const constructDefaultModel = modelSchema => {
     return constructedModel
 }
 
-const sanitizeRequest = (insertionRequest, model) => {
+const sanitizeRequest = (insertionRequest, model, checkForRequiredFields = false) => {
     const validatedRequest = {}
     for (let [key, config] of Object.entries(model)){
         if (insertionRequest.hasOwnProperty(key)){
             let insertValue = insertionRequest[key]
             if (config.enforceType) {
                 if (config.multiStore){
-                    if (!insertValue.slice().every(val => _validateDataType(val, config.enforceType))){
+                    if (!insertValue.every(val => _validateDataType(val, config.enforceType))){
                         console.error(`enforce type failed for multiple ${key}`)
                         return CONSTANTS.ERROR_INVALID_OPERATION
                     }
-                } else if (!_validateDataType(insertValue, config.enforceType)){
-                    console.error(`enforce type failed for single ${key}`)
-                    return CONSTANTS.ERROR_INVALID_OPERATION
+                    insertValue = insertValue.slice().map(val => _castDataType(val, config.enforceType))
+                } else {
+                    if (!_validateDataType(insertValue, config.enforceType)){
+                        console.error(`enforce type failed for single ${key}`)
+                        return CONSTANTS.ERROR_INVALID_OPERATION
+                    }
+                    insertValue = _castDataType(insertValue, config.enforceType)
                 }
             }
             validatedRequest[key] = insertValue
-        } else if (config.required){
+        } else if (checkForRequiredFields && config.required){
             return CONSTANTS.ERROR_MISSING_INFO
         }
     }

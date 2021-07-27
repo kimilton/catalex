@@ -9,11 +9,13 @@ const CONSTANTS = require('../const')
 class SubCache {
     partialIdentifier
     updateCallbacks = []
-    constructor(cacheData={}){
-        this._cache = cacheData
+    registeredRelations = {}
+    constructor(cacheDump = {}){
+        this._cache = cacheDump
     }
     read(){
         const cloned = cloneDeep(this._cache)
+        // Fortify this using registered relations
         return freezeDeep(cloned)
     }
     importCache(data){
@@ -26,6 +28,10 @@ class SubCache {
     importRawList(){
         // no-op
     }
+    registerRelation(relation, relatedTo){
+        this.registeredRelations[relatedTo] = relation
+    }
+    
     addEntry(newEntry){
         const unsafeId = newEntry[CONSTANTS.ID_COLUMN_KEY]
         if (typeof unsafeId !== "string" || unsafeId.length < 3){
@@ -47,12 +53,23 @@ class SubCache {
     hasEntry(entryId){
         return typeof this._cache[entryId] !== "undefined"
     }
-    updateEntry(entryId, updatedFields){
+    updateEntry(entryId, updatedEntry){
         // Assume id supplied by the client is legit
         if (!this.hasEntry(entryId)){
             throw new Error(CONSTANTS.ERROR_NO_ENTRY_EXISTS)
         }
-        throw new Error(CONSTANTS.ERROR_UNIMPLEMENTED)
+        const certifiedEntry = cloneAndCertify(updatedEntry)
+        const mergedEntry = {
+            ...this._cache[entryId],
+            ...certifiedEntry
+        }
+        this._cache[entryId] = mergedEntry
+        this.updateCallbacks.forEach(cb => {
+            cb(this.partialIdentifier, CONSTANTS.OPS_UPDATE, id, updatedEntry)
+        })
+        console.log(`[${this.partialIdentifier}] Cache entry updated for ${entryId}. Object to follow:`)
+        console.log(mergedEntry)
+        return mergedEntry
     }
     deleteEntry(){
         // no-op
@@ -84,6 +101,7 @@ class AttributesCache extends SubCache {
 }
 
 module.exports = {
+    SubCache,
     WorksCache,
     PerformersCache,
     AttributesCache,
