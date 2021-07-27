@@ -2,7 +2,7 @@
 const cloneDeep = require('lodash/cloneDeep')
 const freezeDeep = require('deep-freeze-node');
 
-const { rawToWork, cloneAndCertify, toSafeId } = require('../model')
+const { generateCachePartialFromList, cloneAndCertify, toSafeId } = require('../model')
 
 const CONSTANTS = require('../const')
 
@@ -47,8 +47,11 @@ class SubCache {
     hasEntry(entryId){
         return typeof this._cache[entryId] !== "undefined"
     }
-    updateEntry(){
-        // no-op
+    updateEntry(entryId, updatedFields){
+        // Assume id supplied by the client is legit
+        if (!this.hasEntry(entryId)){
+            throw new Error(CONSTANTS.ERROR_NO_ENTRY_EXISTS)
+        }
         throw new Error(CONSTANTS.ERROR_UNIMPLEMENTED)
     }
     deleteEntry(){
@@ -63,12 +66,10 @@ class WorksCache extends SubCache {
         super(data)
     }
     importRawList(rawList){
-        for (let raw of rawList){
-            const unsafeId = raw[CONSTANTS.ID_COLUMN_KEY]
-            const safeId = toSafeId(unsafeId)
-            if (!this._cache.hasOwnProperty(safeId)){
-                const work = rawToWork(raw)
-                this._cache[safeId] = work
+        const cachePartial = generateCachePartialFromList(rawList)
+        for (let key of Object.keys(cachePartial)){
+            if (!this.hasEntry(key)){
+                this._cache[key] = cloneAndCertify(cachePartial[key])
             }
         }
     }

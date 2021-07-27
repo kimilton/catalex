@@ -1,15 +1,16 @@
 const { getDefaultModel: getDefaultAttributes } = require('./attributes')
 const { getDefaultModel: getDefaultPerformers, getInsertionObject: getPerformerInsertionObject } = require('./performers')
-const { getDefaultModel: getDefaultWorks, generateRawObject, rawToWork } = require('./works')
+const { getDefaultModel: getDefaultWorks, getUpdateObject: getWorksUpdateObject, generateRawObject, generateCachePartialFromList } = require('./works')
 const { cloneAndCertify, toSafeId, toUnsafeId, numToFixed } = require('./shared')
 
 module.exports = {
     getDefaultPerformers,
     getPerformerInsertionObject,
-    getDefaultAttributes,
     getDefaultWorks,
+    getWorksUpdateObject,
     generateRawObject,
-    rawToWork,
+    generateCachePartialFromList,
+    getDefaultAttributes,
     cloneAndCertify,
     toSafeId,
     toUnsafeId,

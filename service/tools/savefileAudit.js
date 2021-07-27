@@ -14,6 +14,7 @@ const main = async () => {
         return
     }
 
+    const report = {}
     await initializePrimeCache(loaded)
     const rawCache = convertPrimeCacheToRaw()
 
@@ -21,17 +22,32 @@ const main = async () => {
         const cache = rawCache[key]
         const keys = Object.keys(cache)
         const keysLength = keys.length
-        console.log(`[${key}] ${keysLength} entries found.`)
+        const subReport = {}
+        subReport["numberOfKeys"] = keysLength
         if (showDetail && keysLength > 0){
             let shown = 0
-            console.dir(cache[keys[0]])
+            subReport["singleEntry"] = cache[keys[0]]
+            subReport["allKeys"] = []
             while (shown < keysLength){
                 let limit = Math.min(shown + IDS_PER_LINE, keysLength)
-                console.log(keys.slice(shown, limit))
+                subReport["allKeys"].push(keys.slice(shown, limit))
                 shown = limit
             }
         }
+        report[key] = subReport
     })
+    for (const [reportKey, subReport] of Object.entries(report)){
+        console.log(`[${reportKey}]`)
+        for (let key of Object.keys(subReport)){
+            if (key === "allKeys"){
+                subReport[key].map(values => console.log(values))
+            } else {
+                console.log(`${key}:`)
+                console.log(subReport[key])
+            }
+        }
+        console.log('')
+    }
 }
 
 (async () => {

@@ -1,5 +1,5 @@
 const CONSTANTS = require('../../const')
-const { constructDefaultModel } = require('../shared')
+const { constructDefaultModel, sanitizeRequest, toSafeId } = require('../shared')
 
 const MODEL_SCHEMA = {
     [CONSTANTS.ID_COLUMN_KEY]: {
@@ -46,14 +46,27 @@ const MODEL_SCHEMA = {
 
 const getDefaultModel = () => constructDefaultModel(MODEL_SCHEMA)
 
+const getUpdateObject = updateRequest => sanitizeRequest(updateRequest, MODEL_SCHEMA)
+
 const generateRawObject = (id, directory, fullPath) => ({
-    [CONSTANTS.ID_COLUMN_KEY]: id,
+    [CONSTANTS.ID_COLUMN_KEY]: toSafeId(id),
     [CONSTANTS.DIRPATH_COLUMN_KEY]: directory,
     [CONSTANTS.FULLFILEPATH_COLUMN_KEY]: fullPath
 })
 
-const rawToWork = raw => ({...getDefaultModel(), ...raw})
+const generateCachePartialFromList = filesList => {
+    const cachePartial = {}
+    for (let raw of filesList){
+        const unsafeId = raw[CONSTANTS.ID_COLUMN_KEY]
+        const safeId = toSafeId(unsafeId)
+        cachePartial[safeId] = {...getDefaultModel(), ...raw}
+    }
+    return cachePartial
+}
 
-exports.getDefaultModel = getDefaultModel
-exports.generateRawObject = generateRawObject
-exports.rawToWork = rawToWork
+module.exports = {
+    getDefaultModel,
+    getUpdateObject,
+    generateRawObject,
+    generateCachePartialFromList,
+}
