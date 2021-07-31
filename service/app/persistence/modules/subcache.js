@@ -1,9 +1,8 @@
 
 const cloneDeep = require('lodash/cloneDeep')
 
-const { generateCachePartialFromList, cloneAndCertify, toSafeId } = require('../model')
-
-const CONSTANTS = require('../const')
+const { generateCachePartialFromList, cloneAndCertify, toSafeId } = require('../../model')
+const CONSTANTS = require('../../const')
 
 class SubCache {
     partialIdentifier
@@ -11,19 +10,32 @@ class SubCache {
     constructor(cacheDump = {}){
         this._cache = cacheDump
     }
-    read(id){
+    read(id, wrap){
         let source = this._cache
-        if (id && this.hasEntry(id)){
+        if (this.hasEntry(id)){
             source = this._cache[id]
         }
-        return cloneDeep(source)
-    }
-    importCache(data){
-        let subCache = {}
-        if (data.hasOwnProperty(this.partialIdentifier)){
-            subCache = cloneDeep(data[this.partialIdentifier])
+        let cloned = cloneDeep(source)
+        if (wrap){
+            cloned = {
+                [this.partialIdentifier]: cloned
+            }
         }
-        this._cache = subCache
+        return cloned
+    }
+    list(){
+        return Object.keys(this._cache)
+    }
+    importArchive(data){
+        let archived = {}
+        if (data && data.hasOwnProperty(this.partialIdentifier)){
+            archived = cloneDeep(data[this.partialIdentifier])
+        }
+        this._cache = archived
+        const importedEntries = Object.keys(archived).length
+        if (importedEntries > 0){
+            console.log(`[${this.partialIdentifier}] SubCache archive import successful. ${importedEntries} relations imported.`)
+        }
     }
     importRawList(){
         // no-op
@@ -47,7 +59,7 @@ class SubCache {
         return certifiedEntry
     }
     hasEntry(entryId){
-        return typeof this._cache[entryId] !== "undefined"
+        return typeof entryId === "string" && typeof this._cache[entryId] !== "undefined"
     }
     updateEntry(entryId, updatedEntry){
         // Assume id supplied by the client is legit
@@ -70,6 +82,9 @@ class SubCache {
     deleteEntry(){
         // no-op
         throw new Error(CONSTANTS.ERROR_UNIMPLEMENTED)
+    }
+    dump(){
+        return this.read(null, true)
     }
 }
 

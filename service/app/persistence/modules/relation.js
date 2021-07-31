@@ -1,8 +1,8 @@
 
 const cloneDeep = require('lodash/cloneDeep')
 
-const { toSafeId } = require('../model')
-const CONSTANTS = require('../const')
+const { toSafeId } = require('../../model')
+const CONSTANTS = require('../../const')
 
 class Relation {
     primaryIdentifier
@@ -31,33 +31,39 @@ class Relation {
         if (id && partialIndex[id]){
             content = partialIndex[id]
         }
+        const accessField = this.getAccessField()
         let cloned = cloneDeep(content)
         if (wrap){
             cloned = {
-                [this.accessField]: cloned
+                [accessField]: cloned
             }
         }
         return cloned
     }
-    importCache(data){
+    importArchive(data){
         /*
         Expected format:
         {
             [this.accessField]: this[this.primaryIdentifier]
         }
+        this.dump() should produce the matching format for exports
         */
-        const id = this.accessField
-        let relCache = {}
-        if (data.hasOwnProperty(id)){
-            relCache = cloneDeep(data[id])
+        const accessField = this.getAccessField()
+        let archived = {}
+        if (data && data.hasOwnProperty(accessField)){
+            archived = cloneDeep(data[accessField])
         }
-        this[this.primaryIdentifier] = relCache
-        if (this.maintainSecondaryIndex){
-            // Build the secondary index here and now
-            this._buildSecondaryIndex()
+        this[this.primaryIdentifier] = archived
+        const importedRelations = Object.keys(archived).length
+        if (importedRelations > 0){
+            console.log(`[${this.getAccessField()}] Relation archive import successful. ${importedRelations} relations imported.`)
+            if (this.maintainSecondaryIndex){
+                // Build the secondary index here and now
+                this._buildMirroredIndex()
+            }
         }
     }
-    _buildSecondaryIndex(buildPrimaryFromSecondary){
+    _buildMirroredIndex(buildPrimaryFromSecondary){
         const sourceId  = buildPrimaryFromSecondary ? this.secondaryIdentifier : this.primaryIdentifier
         const source = this[sourceId]
         const sourceMultiple = buildPrimaryFromSecondary ? this.secondaryMultiple : this.primaryMultiple
@@ -76,6 +82,7 @@ class Relation {
                 this._addRelation(targetId, targetMultiple, targetValue, sourceKey)
             }
         })
+        console.log(`[${this.getAccessField()}] ${buildPrimaryFromSecondary ? 'Primary' : 'Secondary'} relation index built`)
     }
     // This method sets values 1:1. For 1:x, use setRelations()
     addRelations(partialId, dataId, targetId){
@@ -114,17 +121,20 @@ class Relation {
             // Index can hold a single value. Expect incoming data to be a single value
             partialIndex[dataId] = targetValue
         }
+        
+        console.log(`[${this.getAccessField()}] Relation added for ${partialId} - ${dataId}.`)
     }
     hasRelation(partialId, id){
         const partialIndex = this[partialId]
         if (!partialIndex) throw new Error(CONSTANTS.ERROR_UNKNOWN_PARTIAL)
-        const safeId = toSafeId(id)
-        return typeof partialIndex[safeId] !== "undefined"
+        return typeof id === "string" && typeof partialIndex[toSafeId(id)] !== "undefined"
     }
     setRelations(partialId, dataId, targetValue){
         const partialIndex = this[partialId]
         if (!partialIndex) throw new Error(CONSTANTS.ERROR_UNKNOWN_PARTIAL)
         delete partialIndex[dataId]
+        // BUG: how to handle secondary index update? smart ripple? scrap and build new index each time?
+        // How to even identify primary status? factor out the "detector" method and use it here?
         if (Array.isArray(targetValue) || targetValue instanceof Set){
             [...targetValue].forEach(target => this.addRelations(partialId, dataId, target))
         } else {
@@ -133,6 +143,9 @@ class Relation {
     }
     getAccessField(){
         return `${CONSTANTS.RELATION_KEY_PREFIX}${this.accessFieldSuffix}`
+    }
+    dump(){
+        return this.read(this.primaryIdentifier, null, true)
     }
 }
 

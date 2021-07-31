@@ -1,15 +1,9 @@
 
 const freezeDeep = require('deep-freeze-node');
 
-const { scanDirectory } = require('../filesystem')
-const { SubCache, WorksCache, PerformersCache, AttributesCache } = require('./subcache')
-const { Relation, PerfsToWorksRelation } = require('./relation')
-
-const CONSTANTS = require('../const')
-
-const SUBCACHE_LIST = [PerformersCache, AttributesCache, WorksCache]
-
-const RELATIONS_LIST = [PerfsToWorksRelation]
+const { SubCache } = require('./subcache')
+const { Relation } = require('./relation')
+const CONSTANTS = require('../../const')
 
 /*
     Taking over the duties of and providing a more stable API in place of primeCache,
@@ -62,6 +56,17 @@ class RelatedCacheSingleton {
         // Freeze before returning. This is meant to spell out expectations
         return freezeDeep(content)
     }
+    list(subCachePartial){
+        if (!subCachePartial || !id) throw new Error(CONSTANTS.ERROR_MISSING_INFO)
+        const subCache = this._validateAndGetSubCache(subCachePartial)
+        return subCache.list()
+    }
+    importArchive(data){
+        const storageList = this._getStorageInstancesList()
+        storageList.forEach(storage => {
+            storage.importArchive(data)
+        })
+    }
     addEntry(subCachePartial, id, newEntry){
         if (!subCachePartial || !id) throw new Error(CONSTANTS.ERROR_MISSING_INFO)
         const subCache = this._validateAndGetSubCache(subCachePartial)
@@ -94,4 +99,28 @@ class RelatedCacheSingleton {
         if (!subCache instanceof SubCache) throw new Error(CONSTANTS.ERROR_UNKNOWN_PARTIAL)
         return subCache
     }
+    dump(storageType){
+        const storageList = this._getStorageInstancesList(storageType)
+        return storageList.reduce((agg, next) => {
+            return {...agg, ...next.dump()}
+        }, {})
+    }
+    _getStorageInstancesList(storageType = CONSTANTS.ANY_STORAGE){
+        const subCacheInstances = Object.values(this.subCaches)
+        const relationInstances = Object.values(this.relations[this.primaryIdentifier])
+        switch (storageType){
+            case CONSTANTS.SUBCACHE:
+                return subCacheInstances
+            case CONSTANTS.RELATION:
+                return relationInstances
+            case CONSTANTS.ANY_STORAGE:
+                return [...subCacheInstances, ...relationInstances]
+            default:
+                throw new Error(CONSTANTS.ERROR_UNKNOWN_STORAGE)
+        }
+    }
+}
+
+module.exports = {
+    RelatedCacheSingleton
 }

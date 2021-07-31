@@ -1,13 +1,13 @@
 const express = require('express')
 
 const { addNewPerformer, updatePerformer } = require('./operations')
-const { endpoint_AllEntries, endpoint_SingleEntry } = require('../shared')
+const { endpoint_ListEntries, endpoint_SingleEntry } = require('../shared')
 const CONSTANTS = require('../../const')
 
 const router = express.Router()
 
 /* GET */
-router.get('/', endpoint_AllEntries(CONSTANTS.PERFORMERS))
+router.get('/', endpoint_ListEntries(CONSTANTS.PERFORMERS))
 router.get('/:performerId', endpoint_SingleEntry('performerId', CONSTANTS.PERFORMERS))
 
 /* POST */

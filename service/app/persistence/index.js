@@ -1,8 +1,11 @@
-const { initializePrimeCache, convertPrimeCacheToRaw, getSubCache } = require('./primeCache')
+const { initializePersistence, readEntry, addEntry, updateEntry, hasEntry, getPersistanceStateDump } = require('./persistence')
 
 module.exports = {
-    initializePrimeCache,
-    convertPrimeCacheToRaw,
-    getSubCache,
+    initializePersistence,
+    readEntry,
+    addEntry,
+    updateEntry,
+    hasEntry,
+    getPersistanceStateDump,
 }
 
