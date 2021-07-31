@@ -1,6 +1,5 @@
 
 const cloneDeep = require('lodash/cloneDeep')
-const freezeDeep = require('deep-freeze-node');
 
 const { generateCachePartialFromList, cloneAndCertify, toSafeId } = require('../model')
 
@@ -9,14 +8,15 @@ const CONSTANTS = require('../const')
 class SubCache {
     partialIdentifier
     updateCallbacks = []
-    registeredRelations = {}
     constructor(cacheDump = {}){
         this._cache = cacheDump
     }
-    read(){
-        const cloned = cloneDeep(this._cache)
-        // Fortify this using registered relations
-        return freezeDeep(cloned)
+    read(id){
+        let source = this._cache
+        if (id && this.hasEntry(id)){
+            source = this._cache[id]
+        }
+        return cloneDeep(source)
     }
     importCache(data){
         let subCache = {}
@@ -28,10 +28,6 @@ class SubCache {
     importRawList(){
         // no-op
     }
-    registerRelation(relation, relatedTo){
-        this.registeredRelations[relatedTo] = relation
-    }
-    
     addEntry(newEntry){
         const unsafeId = newEntry[CONSTANTS.ID_COLUMN_KEY]
         if (typeof unsafeId !== "string" || unsafeId.length < 3){

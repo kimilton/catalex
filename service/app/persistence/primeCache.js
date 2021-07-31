@@ -43,36 +43,36 @@ const initializePrimeCache = async (loadedData = {}, performScan = false) => {
         { configurable: false, writable: false, enumerable: false }
     )
 
-    // Instantiate the list of subcaches and attach them to the primeCache
-    ;[...SUBCACHE_LIST].forEach(({ key, instantiator }) => {
-        primeCache[key] = instantiator()
-    })
+    // // Instantiate the list of subcaches and attach them to the primeCache
+    // ;[...SUBCACHE_LIST].forEach(({ key, instantiator }) => {
+    //     primeCache[key] = instantiator()
+    // })
 
-    // Instantiate the list of relations, attach them, and register them to matching subcaches
-    ;[...RELATIONS_LIST].forEach(({ instantiator }) => {
-        const relation = instantiator()
-        const key = relation.getKey()
-        primeCache[key] = relation
-        const primary = relation.primary
-        const secondary = relation.secondary
-        if (primeCache[primary] instanceof SubCache){
-            primeCache[primary].registerRelation(relation, secondary)
-        }
-        if (primeCache[secondary] instanceof SubCache){
-            primeCache[secondary].registerRelation(relation, primary)
-        }
-    })
+    // // Instantiate the list of relations, attach them, and register them to matching subcaches
+    // ;[...RELATIONS_LIST].forEach(({ instantiator }) => {
+    //     const relation = instantiator()
+    //     const accessField = relation.getAccessField()
+    //     primeCache[accessField] = relation
+    //     const primary = relation.primary
+    //     const secondary = relation.secondary
+    //     if (primeCache[primary] instanceof SubCache){
+    //         primeCache[primary].registerRelation(relation, secondary)
+    //     }
+    //     if (primeCache[secondary] instanceof SubCache){
+    //         primeCache[secondary].registerRelation(relation, primary)
+    //     }
+    // })
 
-    for (let subcache of Object.values(primeCache)){
-        if (subcache.importCache && typeof subcache.importCache === 'function'){
-            subcache.importCache(loadedData)
-            if (scanList && subcache.importRawList && typeof subcache.importRawList === 'function'){
-                subcache.importRawList(scanList)
-            }
-        }
-    }
-    singletonCache = primeCache
-    return singletonCache
+    // for (let subcache of Object.values(primeCache)){
+    //     if (subcache.importCache && typeof subcache.importCache === 'function'){
+    //         subcache.importCache(loadedData)
+    //         if (scanList && subcache.importRawList && typeof subcache.importRawList === 'function'){
+    //             subcache.importRawList(scanList)
+    //         }
+    //     }
+    // }
+    // singletonCache = primeCache
+    // return singletonCache
 }
 
 const convertPrimeCacheToRaw = givenPrimeCache => {
