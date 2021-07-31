@@ -77,6 +77,7 @@ class Relation {
             }
         })
     }
+    // This method sets values 1:1. For 1:x, use setRelations()
     addRelations(partialId, dataId, targetId){
         const safeDataId = toSafeId(dataId)
         const safeTargetId = toSafeId(targetId)
@@ -119,6 +120,16 @@ class Relation {
         if (!partialIndex) throw new Error(CONSTANTS.ERROR_UNKNOWN_PARTIAL)
         const safeId = toSafeId(id)
         return typeof partialIndex[safeId] !== "undefined"
+    }
+    setRelations(partialId, dataId, targetValue){
+        const partialIndex = this[partialId]
+        if (!partialIndex) throw new Error(CONSTANTS.ERROR_UNKNOWN_PARTIAL)
+        delete partialIndex[dataId]
+        if (Array.isArray(targetValue) || targetValue instanceof Set){
+            [...targetValue].forEach(target => this.addRelations(partialId, dataId, target))
+        } else {
+            this.addRelations(partialId, dataId, targetValue)
+        }
     }
     getAccessField(){
         return `${CONSTANTS.RELATION_KEY_PREFIX}${this.accessFieldSuffix}`
