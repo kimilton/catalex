@@ -1,4 +1,3 @@
-const { toSafeId } = require('../model')
 const { jsonWrap, jsonWrapErr } = require('../protocol')
 const persistence = require('../persistence')
 const CONSTANTS = require('../const')
@@ -19,10 +18,9 @@ const endpoint_ListEntries = subCacheId => (req, res) => {
 }
 
 const endpoint_SingleEntry = (param, subCacheId) => (req, res) => {
-    let unsafeId = req.params[param]
-    if (!unsafeId) res.status(400).json(jsonWrapErr(CONSTANTS.ERROR_INVALID_ID)).end()
-    const safeId = toSafeId(unsafeId)
-    const entry = persistence.readEntry(subCacheId, safeId)
+    let entryId = req.params[param]
+    if (!entryId) res.status(400).json(jsonWrapErr(CONSTANTS.ERROR_INVALID_ID)).end()
+    const entry = persistence.readEntry(subCacheId, entryId)
     if (entry){
         res.json(jsonWrap(entry)).end()
         return
@@ -33,6 +31,6 @@ const endpoint_SingleEntry = (param, subCacheId) => (req, res) => {
 
 module.exports = {
     getDefaultIdValidator,
-    endpoint_AllEntries,
+    endpoint_ListEntries,
     endpoint_SingleEntry,
 }

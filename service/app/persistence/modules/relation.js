@@ -1,7 +1,6 @@
 
 const cloneDeep = require('lodash/cloneDeep')
 
-const { toSafeId } = require('../../model')
 const CONSTANTS = require('../../const')
 
 class Relation {
@@ -20,6 +19,7 @@ class Relation {
             this.secondaryMultiple,
             this.accessFieldSuffix
         ]
+        // Make sure the inheriting class sets all required field values
         if (REQ_FIELDS.some(v => typeof v === "undefined")) throw new Error(CONSTANTS.ERROR_UNIMPLEMENTED)
         this[this.primaryIdentifier] = {}
         this[this.secondaryIdentifier] = {}
@@ -64,6 +64,7 @@ class Relation {
         }
     }
     _buildMirroredIndex(buildPrimaryFromSecondary){
+        console.log(`[${this.getAccessField()}] ${buildPrimaryFromSecondary ? 'Primary' : 'Secondary'} relation index has started building`)
         const sourceId  = buildPrimaryFromSecondary ? this.secondaryIdentifier : this.primaryIdentifier
         const source = this[sourceId]
         const sourceMultiple = buildPrimaryFromSecondary ? this.secondaryMultiple : this.primaryMultiple
@@ -82,26 +83,22 @@ class Relation {
                 this._addRelation(targetId, targetMultiple, targetValue, sourceKey)
             }
         })
-        console.log(`[${this.getAccessField()}] ${buildPrimaryFromSecondary ? 'Primary' : 'Secondary'} relation index built`)
+        console.log(`[${this.getAccessField()}] ${buildPrimaryFromSecondary ? 'Primary' : 'Secondary'} relation index built successfully\n`)
     }
     // This method sets values 1:1. For 1:x, use setRelations()
     addRelations(partialId, dataId, targetId){
-        const safeDataId = toSafeId(dataId)
-        const safeTargetId = toSafeId(targetId)
-        // jankkkk
-        const isPrimaryIndex =  this.primaryIdentifier === partialId
+        const isPrimaryIndex =  this._isPartialPrimary(partialId)
         if (!isPrimaryIndex && !this.maintainSecondaryIndex) throw new Error(CONSTANTS.ERROR_INVALID_OPERATION)
         const isMultiple = isPrimaryIndex ? this.primaryMultiple : this.secondaryMultiple
-        this._addRelation(partialId, isMultiple, safeDataId, safeTargetId)
+        this._addRelation(partialId, isMultiple, dataId, targetId)
         // Echo the update if we're maintaining secondary index or this was a secondary update going to primary
         if (this.maintainSecondaryIndex || !isPrimaryIndex){
             this._addRelation(this.secondaryIdentifier, this.secondaryMultiple, safeSid, safePid)
         }
     }
     _addRelation(partialId, isMultiple, dataId, targetValue){
-        const partialIndex = this[partialId]
-        if (!partialIndex) throw new Error(CONSTANTS.ERROR_UNKNOWN_PARTIAL)
-        if (!partialIndex.hasOwnProperty(dataId)){
+        const partialIndex = this._validateAndGetPartial(partialId)
+        if (!this.hasRelation(dataId)){
             if (isMultiple){
                 partialIndex[dataId] = new Set()
             } else {
@@ -124,25 +121,47 @@ class Relation {
         
         console.log(`[${this.getAccessField()}] Relation added for ${partialId} - ${dataId}.`)
     }
-    hasRelation(partialId, id){
-        const partialIndex = this[partialId]
-        if (!partialIndex) throw new Error(CONSTANTS.ERROR_UNKNOWN_PARTIAL)
-        return typeof id === "string" && typeof partialIndex[toSafeId(id)] !== "undefined"
+    hasRelation(partialId, dataId){
+        const partialIndex = this._validateAndGetPartial(partialId)
+        return typeof dataId === "string" && typeof partialIndex[id] !== "undefined"
     }
     setRelations(partialId, dataId, targetValue){
-        const partialIndex = this[partialId]
-        if (!partialIndex) throw new Error(CONSTANTS.ERROR_UNKNOWN_PARTIAL)
+        const partialIndex = this._validateAndGetPartial(partialId)
+        // const previousValue = partialIndex[dataId]
         delete partialIndex[dataId]
-        // BUG: how to handle secondary index update? smart ripple? scrap and build new index each time?
-        // How to even identify primary status? factor out the "detector" method and use it here?
+
+        // Adding operation depends on the pluraity of targetValue
         if (Array.isArray(targetValue) || targetValue instanceof Set){
             [...targetValue].forEach(target => this.addRelations(partialId, dataId, target))
         } else {
             this.addRelations(partialId, dataId, targetValue)
         }
+
+        // Ripple out the changes by just rebuilding the entire index. Replace with intelligent operation if this becomes untenable
+        const isSecondary = !this._isPartialPrimary(partialId)
+        if (isSecondary){
+            this._buildMirroredIndex(true)
+        } else if (this.maintainSecondaryIndex){
+            this._buildMirroredIndex()
+        }
     }
     getAccessField(){
         return `${CONSTANTS.RELATION_KEY_PREFIX}${this.accessFieldSuffix}`
+    }
+    _isPartialPrimary(partialId){
+        _validatePartialId(partialId)
+        return partialId === this.primaryIdentifier
+    }
+    _validatePartialId(partialId){
+        const validIds = [this.primaryIdentifier, this.secondaryIdentifier]
+        if (!validIds.includes(partialId)) throw new Error(CONSTANTS.ERROR_UNKNOWN_PARTIAL)
+        return true
+    }
+    _validateAndGetPartial(partialId){
+        _validatePartialId(partialId)
+        const partialIndex = this[partialId]
+        if (typeof partialIndex === 'undefined') throw new Error(CONSTANTS.ERROR_UNKNOWN_PARTIAL)
+        return partialIndex
     }
     dump(){
         return this.read(this.primaryIdentifier, null, true)

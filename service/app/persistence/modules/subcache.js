@@ -1,7 +1,7 @@
 
 const cloneDeep = require('lodash/cloneDeep')
 
-const { generateCachePartialFromList, cloneAndCertify, toSafeId } = require('../../model')
+const { generateCachePartialFromList, cloneAndCertify } = require('../../model')
 const CONSTANTS = require('../../const')
 
 class SubCache {
@@ -41,20 +41,20 @@ class SubCache {
         // no-op
     }
     addEntry(newEntry){
-        const unsafeId = newEntry[CONSTANTS.ID_COLUMN_KEY]
-        if (typeof unsafeId !== "string" || unsafeId.length < 3){
+        const entryId = newEntry[CONSTANTS.ID_COLUMN_KEY]
+        // turn this into a reusable id validator
+        if (typeof entryId !== "string" || entryId.length < 3){
             throw new Error(CONSTANTS.ERROR_INVALID_ID)
         }
-        const safeId = toSafeId(unsafeId)
-        if (this.hasEntry(safeId)){
+        if (this.hasEntry(entryId)){
             throw new Error(CONSTANTS.ERROR_ENTRY_EXISTS)
         }
         const certifiedEntry = cloneAndCertify(newEntry)
-        this._cache[safeId] = certifiedEntry
+        this._cache[entryId] = certifiedEntry
         this.updateCallbacks.forEach(cb => {
             cb(this.partialIdentifier, CONSTANTS.OPS_ADD, id, newEntry)
         })
-        console.log(`[${this.partialIdentifier}] Cache entry created for ${safeId}. Object to follow:`)
+        console.log(`[${this.partialIdentifier}] Cache entry created for ${entryId}. Object to follow:`)
         console.log(certifiedEntry)
         return certifiedEntry
     }
