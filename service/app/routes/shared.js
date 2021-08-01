@@ -2,10 +2,6 @@ const { jsonWrap, jsonWrapErr } = require('../protocol')
 const persistence = require('../persistence')
 const CONSTANTS = require('../const')
 
-const getDefaultIdValidator = (cache) => {
-    return id => id && !cache.hasEntry(id)
-}
-
 /**
  * Shared Endpoint Functions Start Here
  * 
@@ -30,7 +26,6 @@ const endpoint_SingleEntry = (param, subCacheId) => (req, res) => {
 }
 
 module.exports = {
-    getDefaultIdValidator,
     endpoint_ListEntries,
     endpoint_SingleEntry,
 }

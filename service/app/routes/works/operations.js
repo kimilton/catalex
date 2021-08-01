@@ -1,6 +1,7 @@
 const { scanDirectory } = require('../../filesystem')
 const { generateCachePartialFromList } = require('../../model')
 const { getSubCache } = require('../../persistence')
+const { jsonWrap, jsonWrapErr } = require('../../protocol')
 
 const CONSTANTS = require('../../const')
 
@@ -39,11 +40,11 @@ const performScan = async (req, res) => {
             removedIds.push(id)
         }
     }
-    res.json({
+    res.json(jsonWrap({
         new: newFiles,
         updated: updatedFiles,
         removed: removedIds
-    })
+    }))
 }
 
 module.exports = {

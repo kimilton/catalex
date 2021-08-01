@@ -13,12 +13,7 @@ const RELATIONS_LIST = [PerfsToWorksRelation]
 
 let _singletonCache
 
-const initializePersistence = async (archivedData = {})  => {
-    let scannedFiles
-    if (performScan){
-        scannedFiles = await scanDirectory()
-    }
-
+const initializePersistence = (archivedData = {})  => {
     // Instantiate the RelCacheSingleton here once. All exported methods here should operate on this instance
     _singletonCache = new RelatedCacheSingleton(SUBCACHE_LIST, RELATIONS_LIST)
     console.log(`[Persistence] All cache and relation records initialized\n`)
