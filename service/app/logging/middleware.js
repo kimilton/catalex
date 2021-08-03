@@ -1,9 +1,9 @@
 const requestLoggerMiddleware = (req, res, next) => {
-    console.log(`[ INCOMING REQUEST ] ==============================================================`)
+    console.log(`\n[ INCOMING REQUEST ] ==============================================================`)
     console.log(`Request URL: ${req.originalUrl}`)
     console.log(`Request Method: ${req.method}`)
-    if (req.body && req.body.length){
-        console.log(`Request body to follow ---`)
+    if (req.body && Object.keys(req.body).length){
+        console.log(`Request body:`)
         console.dir(req.body)
     }
     console.log(`Time: <${Date.now()}> ${new Date().toDateString()} ${new Date().toTimeString()}`)

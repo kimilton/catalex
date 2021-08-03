@@ -62,7 +62,6 @@ class SubCache {
         return typeof entryId === "string" && typeof this._cache[entryId] !== "undefined"
     }
     updateEntry(entryId, updatedEntry){
-        // Assume id supplied by the client is legit
         if (!this.hasEntry(entryId)){
             throw new Error(CONSTANTS.ERROR_NO_ENTRY_EXISTS)
         }

@@ -1,5 +1,6 @@
-const { jsonWrap, jsonWrapErr } = require('../protocol')
 const persistence = require('../persistence')
+const { jsonWrap, jsonWrapErr } = require('../protocol')
+
 const CONSTANTS = require('../const')
 
 /**

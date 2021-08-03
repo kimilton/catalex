@@ -1,6 +1,6 @@
+const persistence = require('../../persistence')
 const { scanDirectory } = require('../../filesystem')
 const { generateCachePartialFromList } = require('../../model')
-const { getSubCache } = require('../../persistence')
 const { jsonWrap, jsonWrapErr } = require('../../protocol')
 
 const CONSTANTS = require('../../const')
@@ -16,7 +16,7 @@ const performScan = async (req, res) => {
     // Generate cache partial from the scanned files list
     const cachePartial = generateCachePartialFromList(scanned)
     // Grab works cache and read all entries from it
-    const works = getSubCache(CONSTANTS.WORKS).read()
+    const works = persistence.list(CONSTANTS.WORKS)
 
     const newFiles = {}
     const updatedFiles = {}

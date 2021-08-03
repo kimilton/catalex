@@ -15,7 +15,7 @@ const {
     generateCachePartialFromList
 } = require('./works')
 
-const { cloneAndCertify, toSafeId, toUnsafeId, numToFixed } = require('./shared')
+const { cloneAndCertify, filterOnlyRelationKeyValues, toSafeId, toUnsafeId, numToFixed } = require('./shared')
 
 module.exports = {
     getDefaultAttributes,
@@ -30,6 +30,7 @@ module.exports = {
     generateCachePartialFromList,
 
     cloneAndCertify,
+    filterOnlyRelationKeyValues,
     toSafeId,
     toUnsafeId,
     numToFixed

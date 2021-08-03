@@ -3,6 +3,7 @@ const freezeDeep = require('deep-freeze-node');
 
 const { SubCache } = require('./subcache')
 const { Relation } = require('./relation')
+const { filterOnlyRelationKeyValues } = require('../../model')
 const CONSTANTS = require('../../const')
 
 /*
@@ -12,15 +13,18 @@ const CONSTANTS = require('../../const')
 class RelatedCacheSingleton {
     subCaches = {}
     relations = {}
-    constructor(subCacheList, relationsList){
-        for (let subCache of subCacheList){
-            if (!subCache instanceof SubCache) throw new Error(CONSTANTS.ERROR_INVALID_CLASS_INSTANCE)
-            const instance = new subCache()
-            this.subCaches[subCache] = instance
+    relationAllInstances = []
+    constructor(subCacheClassList, relationClassList){
+        for (let subCacheClass of subCacheClassList){
+            const instance = new subCacheClass()
+            if (!(instance instanceof SubCache)) throw new Error(CONSTANTS.ERROR_INVALID_CLASS_INSTANCE)
+            const subCacheName = instance.partialIdentifier
+            this.subCaches[subCacheName] = instance
         }
-        for (let relation of relationsList){
-            if (!relation instanceof Relation) throw new Error(CONSTANTS.ERROR_INVALID_CLASS_INSTANCE)
-            const instance = new relation()
+        for (let relationClass of relationClassList){
+            const instance = new relationClass()
+            if (!(instance instanceof Relation)) throw new Error(CONSTANTS.ERROR_INVALID_CLASS_INSTANCE)
+            instance.init() // Nasty. Remember that relation instances need to be initialized
             const primary = instance.primaryIdentifier
             const secondary = instance.secondaryIdentifier
             const accessField = instance.getAccessField()
@@ -29,26 +33,30 @@ class RelatedCacheSingleton {
             this.relations[primary].push(instance)
             this.relations[secondary].push(instance)
             this.relations[accessField] = instance
+            // There isn't a clean way to iterate over all relation instances once. This helps
+            this.relationAllInstances.push(instance)
         }
     }
     coldRead(subCachePartial, id, bypassIndexInjection){
         if (!subCachePartial || !id) throw new Error(CONSTANTS.ERROR_MISSING_INFO)
         const subCache = this._validateAndGetSubCache(subCachePartial)
         let content = subCache.read()
-        if (id && this.hasEntry(id)){
+        if (id && this.hasEntry(subCachePartial, id)){
             // Get single entry flow. Grab content, index and fuse
             content = content[id]
             if (!bypassIndexInjection){
-                this.relations[id].forEach(relation => {
-                    const relationField = relation.read(subCachePartial, id, true) // Return with field wrapper
+                const relationPartials = this.relations[subCachePartial]
+                relationPartials.forEach(instance => {
+                    const relationField = instance.read(subCachePartial, id, true) // Return with field wrapper
                     content = {...content, ...relationField} // mutate content object
                 })
             }
         } else if (!bypassIndexInjection) {
             // Get all entries flow. Grab indices and fuse
             Object.keys(content).forEach(contentId => {
-                this.relations[contentId].forEach(relation => {
-                    const relationField = relation.read(subCachePartial, contentId, true) // Return with field wrapper
+                const relationPartials = this.relations[subCachePartial]
+                relationPartials.forEach(instance => {
+                    const relationField = instance.read(subCachePartial, contentId, true) // Return with field wrapper
                     content[contentId] = {...content[contentId], ...relationField} // mutate content object
                 })
             })
@@ -57,7 +65,6 @@ class RelatedCacheSingleton {
         return freezeDeep(content)
     }
     list(subCachePartial){
-        if (!subCachePartial || !id) throw new Error(CONSTANTS.ERROR_MISSING_INFO)
         const subCache = this._validateAndGetSubCache(subCachePartial)
         return subCache.list()
     }
@@ -74,7 +81,7 @@ class RelatedCacheSingleton {
         const relationalFields = Object.keys(newEntry).filter(key => key.startsWith(CONSTANTS.RELATION_KEY_PREFIX))
         relationalFields.forEach(accField => {
             const instance = this.relations[accField]
-            if (!instance instanceof Relation) throw new Error(CONSTANTS.ERROR_UNKNOWN_PARTIAL)
+            if (!(instance instanceof Relation)) throw new Error(CONSTANTS.ERROR_UNKNOWN_PARTIAL)
             instance.addRelations(subCachePartial, id, newEntry[accField])
         })
     }
@@ -86,17 +93,18 @@ class RelatedCacheSingleton {
     updateEntry(subCachePartial, id, updatedEntry){
         if (!subCachePartial || !id) throw new Error(CONSTANTS.ERROR_MISSING_INFO)
         const subCache = this._validateAndGetSubCache(subCachePartial)
-        subCache.updateEntry(updatedEntry) // Discard return object
-        const relationalFields = Object.keys(updatedEntry).filter(key => key.startsWith(CONSTANTS.RELATION_KEY_PREFIX))
-        relationalFields.forEach(accField => {
+        const relationKeyValuePairs = filterOnlyRelationKeyValues(updatedEntry)
+        let insertedEntry = subCache.updateEntry(id, updatedEntry)
+        for (let [accField, values] of Object.entries(relationKeyValuePairs)){
             const instance = this.relations[accField]
-            if (!instance instanceof Relation) throw new Error(CONSTANTS.ERROR_UNKNOWN_PARTIAL)
-            instance.setRelations(subCachePartial, id, newEntry[accField])
-        })
+            if (!(instance instanceof Relation)) throw new Error(CONSTANTS.ERROR_UNKNOWN_PARTIAL)
+            instance.setRelations(subCachePartial, id, values)
+        }
+        return {...insertedEntry, ...relationKeyValuePairs}
     }
     _validateAndGetSubCache(subCachePartial){
         const subCache = this.subCaches[subCachePartial]
-        if (!subCache instanceof SubCache) throw new Error(CONSTANTS.ERROR_UNKNOWN_PARTIAL)
+        if (!(subCache instanceof SubCache)) throw new Error(CONSTANTS.ERROR_UNKNOWN_PARTIAL)
         return subCache
     }
     dump(storageType){
@@ -107,7 +115,7 @@ class RelatedCacheSingleton {
     }
     _getStorageInstancesList(storageType = CONSTANTS.ANY_STORAGE){
         const subCacheInstances = Object.values(this.subCaches)
-        const relationInstances = Object.values(this.relations[this.primaryIdentifier])
+        const relationInstances = this.relationAllInstances
         switch (storageType){
             case CONSTANTS.SUBCACHE:
                 return subCacheInstances

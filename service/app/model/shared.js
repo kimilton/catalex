@@ -73,6 +73,10 @@ const cloneAndCertify = entry => {
     }
 }
 
+const filterOnlyRelationKeyValues = entry => {
+    const relationFieldKeys = Object.keys(entry).filter(key => key.startsWith(CONSTANTS.RELATION_KEY_PREFIX))
+    return relationFieldKeys.reduce((obj, field) => ({...obj, [field]: entry[field]}), {})
+}
 
 const constructDefaultModel = modelSchema => {
     let constructedModel = {}
@@ -88,6 +92,7 @@ const constructDefaultModel = modelSchema => {
 
 const sanitizeRequest = (insertionRequest, model, checkForRequiredFields = false) => {
     const validatedRequest = {}
+    const relationFieldValuePairs = filterOnlyRelationKeyValues(insertionRequest)
     for (let [key, config] of Object.entries(model)){
         if (insertionRequest.hasOwnProperty(key)){
             let insertValue = insertionRequest[key]
@@ -112,12 +117,20 @@ const sanitizeRequest = (insertionRequest, model, checkForRequiredFields = false
         }
     }
     validatedRequest[CONSTANTS.SANITIZATION_SEAL_KEY] = true
-    return validatedRequest
+    return {
+        ...validatedRequest,
+        ...relationFieldValuePairs
+    }
 }
 
-exports.cloneAndCertify = cloneAndCertify
-exports.constructDefaultModel = constructDefaultModel
-exports.sanitizeRequest = sanitizeRequest
-exports.toSafeId = toSafeId
-exports.toUnsafeId = toUnsafeId
-exports.numToFixed = numToFixed
+
+
+module.exports = {
+    cloneAndCertify,
+    filterOnlyRelationKeyValues,
+    constructDefaultModel,
+    sanitizeRequest,
+    toSafeId,
+    toUnsafeId,
+    numToFixed,
+}

@@ -1,8 +1,8 @@
 const express = require('express')
 
-const { loadFromFile } = require('./filesystem')
-const { initializePersistence } = require('./persistence')
+const persistence = require('./persistence')
 const routes = require('./routes')
+const { loadFromFile } = require('./filesystem')
 const { requestLoggerMiddleware } = require('./logging/middleware')
 
 const app = express()
@@ -16,10 +16,10 @@ module.exports = async () => {
     const [ archivedData, fileLoadError ] = await loadFromFile()
     if (fileLoadError) {
         console.log('Unable to read file contents! Instantiating an empty cache.')
-        initializePersistence()
+        persistence.initializePersistence()
     } else {
         console.log('Cache state restored successfully.')
-        initializePersistence(archivedData)
+        persistence.initializePersistence(archivedData)
     }
     
     // Register middlewares here
@@ -28,6 +28,7 @@ module.exports = async () => {
     app.use(routes)
 
     app.listen(port, () => {
+        console.log(`=================================================\n`)
         console.log(`Example app listening at http://localhost:${port}\n`)
     })
 

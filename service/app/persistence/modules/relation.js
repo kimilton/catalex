@@ -10,8 +10,9 @@ class Relation {
     secondaryMultiple
     maintainSecondaryIndex = false
     accessFieldSuffix
-    
-    constructor(){
+
+    // This is needed because constructors can't handle reading of field values
+    init(){
         const REQ_FIELDS = [
             this.primaryIdentifier,
             this.secondaryIdentifier,
@@ -27,13 +28,14 @@ class Relation {
     read(partialId, id, wrap){
         let partialIndex = this[partialId]
         if (!partialIndex) throw new Error(CONSTANTS.ERROR_UNKNOWN_PARTIAL)
-        content = partialIndex
+        let content = partialIndex
         if (id && partialIndex[id]){
             content = partialIndex[id]
         }
-        const accessField = this.getAccessField()
         let cloned = cloneDeep(content)
+        cloned = this._recurseAndPrep(cloned)
         if (wrap){
+            const accessField = this.getAccessField()
             cloned = {
                 [accessField]: cloned
             }
@@ -93,12 +95,12 @@ class Relation {
         this._addRelation(partialId, isMultiple, dataId, targetId)
         // Echo the update if we're maintaining secondary index or this was a secondary update going to primary
         if (this.maintainSecondaryIndex || !isPrimaryIndex){
-            this._addRelation(this.secondaryIdentifier, this.secondaryMultiple, safeSid, safePid)
+            this._addRelation(this.secondaryIdentifier, this.secondaryMultiple, targetId, dataId)
         }
     }
     _addRelation(partialId, isMultiple, dataId, targetValue){
         const partialIndex = this._validateAndGetPartial(partialId)
-        if (!this.hasRelation(dataId)){
+        if (!this.hasRelation(partialId, dataId)){
             if (isMultiple){
                 partialIndex[dataId] = new Set()
             } else {
@@ -118,12 +120,11 @@ class Relation {
             // Index can hold a single value. Expect incoming data to be a single value
             partialIndex[dataId] = targetValue
         }
-        
         console.log(`[${this.getAccessField()}] Relation added for ${partialId} - ${dataId}.`)
     }
     hasRelation(partialId, dataId){
         const partialIndex = this._validateAndGetPartial(partialId)
-        return typeof dataId === "string" && typeof partialIndex[id] !== "undefined"
+        return typeof dataId === "string" && typeof partialIndex[dataId] !== "undefined"
     }
     setRelations(partialId, dataId, targetValue){
         const partialIndex = this._validateAndGetPartial(partialId)
@@ -136,20 +137,12 @@ class Relation {
         } else {
             this.addRelations(partialId, dataId, targetValue)
         }
-
-        // Ripple out the changes by just rebuilding the entire index. Replace with intelligent operation if this becomes untenable
-        const isSecondary = !this._isPartialPrimary(partialId)
-        if (isSecondary){
-            this._buildMirroredIndex(true)
-        } else if (this.maintainSecondaryIndex){
-            this._buildMirroredIndex()
-        }
     }
     getAccessField(){
         return `${CONSTANTS.RELATION_KEY_PREFIX}${this.accessFieldSuffix}`
     }
     _isPartialPrimary(partialId){
-        _validatePartialId(partialId)
+        this._validatePartialId(partialId)
         return partialId === this.primaryIdentifier
     }
     _validatePartialId(partialId){
@@ -158,10 +151,19 @@ class Relation {
         return true
     }
     _validateAndGetPartial(partialId){
-        _validatePartialId(partialId)
+        this._validatePartialId(partialId)
         const partialIndex = this[partialId]
         if (typeof partialIndex === 'undefined') throw new Error(CONSTANTS.ERROR_UNKNOWN_PARTIAL)
         return partialIndex
+    }
+    _recurseAndPrep(branch){
+        // Recurse and turn all instances of Set into arrays
+        if (branch instanceof Set){
+            return [...branch]
+        } else if (Object.keys(branch).length){
+            return Object.keys(branch).reduce((obj, childKey) => ({...obj, [childKey]: this._recurseAndPrep(branch[childKey])}), {})
+        }
+        return branch
     }
     dump(){
         return this.read(this.primaryIdentifier, null, true)
